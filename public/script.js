@@ -34,6 +34,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const mensagemTitulo = document.getElementById('mensagem-titulo');
     const mensagemTexto = document.getElementById('mensagem-texto');
     const btnFecharMensagem = document.getElementById('btn-fechar-mensagem');
+    const musica = document.getElementById('musica');
     
     let players = [];
     let currentPlayerName = '';
@@ -69,8 +70,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnResetJogadores.addEventListener('click', () => {
-        if (confirm('Tem certeza que deseja resetar todos os jogadores?')) {
+        if (confirm('Tem certeza que deseja resetar todos os jogadores e voltar para a tela de cadastro?')) {
             socket.emit('resetPlayers');
+            // Recarrega a página para garantir que o estado do cliente seja limpo
+            window.location.reload();
         }
     });
 
@@ -89,12 +92,11 @@ document.addEventListener('DOMContentLoaded', () => {
         const tip = inputDica.value.trim();
         if (tip) {
             const numeroSecreto = Math.floor(Math.random() * 100) + 1;
+            // CORREÇÃO: MOSTRANDO O NÚMERO SECRETO NA TELA
             numeroSecretoDisplay.textContent = numeroSecreto;
             numeroSecretoDisplay.classList.remove('hidden');
             
-            // CORREÇÃO CRÍTICA: O cliente não tenta se identificar. Ele só envia a missão.
             const tipData = { tip, number: numeroSecreto };
-            console.log('[CLIENTE] Enviando dica para o servidor:', tipData);
             socket.emit('sendTip', tipData);
             
             espacoDicas.classList.add('hidden');
@@ -102,12 +104,15 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnOrdenar.addEventListener('click', () => {
-        const orderedItems = [...listaDicasOrdenarUl.children].map(item => item.dataset.originalIndex);
-        socket.emit('checkOrder', { orderedItems });
+        if (sortable) {
+            const orderedTips = sortable.toArray().map(tipText => {
+                 return { tip: tipText };
+            });
+            socket.emit('checkOrder', { orderedTips });
+        }
     });
 
     btnProximaRodada.addEventListener('click', () => {
-        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent) + 1;
         socket.emit('startGame', { tema: 'aleatorio' });
     });
 
@@ -117,26 +122,32 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('updatePlayers', updatePlayerList);
 
     socket.on('gameStarted', (gameInfo) => {
+        // CORREÇÃO: LIGANDO A MÚSICA
+        if (musica.paused) {
+            musica.play().catch(e => console.log("A reprodução automática de áudio foi bloqueada pelo navegador."));
+        }
+        
         cadastroSection.classList.add('hidden');
         jogoSection.classList.remove('hidden');
         ordenacaoSection.classList.add('hidden');
         historicoRodadaDiv.classList.add('hidden');
         btnProximaRodada.classList.add('hidden');
         listaDicasUl.innerHTML = '';
+        
+        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
         categoriaRodadaSpan.textContent = gameInfo.categoria;
         temaRodadaSpan.textContent = gameInfo.tema;
-        // CORREÇÃO CRÍTICA: O cliente pede ao servidor para começar a rodada de dicas.
         socket.emit('requestNextTipper');
     });
     
     socket.on('nextTipper', (player) => {
-        console.log("[CLIENTE] É a vez de", player.name, "dar a dica.");
         nomeJogadorVezSpan.textContent = player.name;
+        // CORREÇÃO: Mostrando o nome do jogador da vez na caixa de dica
+        nomeJogadorDicaSpan.textContent = player.name;
         numeroSecretoDisplay.classList.add('hidden');
         if (player.id === socket.id) {
             currentPlayerName = player.name;
             espacoDicas.classList.remove('hidden');
-            nomeJogadorDicaSpan.textContent = player.name;
             inputDica.value = '';
             inputDica.focus();
         } else {
@@ -145,34 +156,34 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('allTipsReceived', (tips) => {
-        console.log('[CLIENTE] Todas as dicas foram recebidas:', tips);
         espacoDicas.classList.add('hidden');
-        listaDicasUl.innerHTML = '<h4>Dicas Enviadas (já ordenadas):</h4>';
+        listaDicasUl.innerHTML = '<h4>Dicas Enviadas:</h4>';
         tips.forEach(tip => {
             const li = document.createElement('li');
-            li.textContent = `${tip.number} - ${tip.tip} (${tip.player.name})`;
+            // Mostra apenas a dica, como deve ser antes da ordenação
+            li.textContent = tip.tip;
             listaDicasUl.appendChild(li);
         });
         socket.emit('requestSorter');
     });
 
     socket.on('updateSorter', (sorter, tipsToGuess) => {
-        console.log('[CLIENTE]', sorter.name, 'foi escolhido para ordenar.');
         if (sorter.id === socket.id) {
             nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
             ordenacaoSection.classList.remove('hidden');
             tentativasRestantesSpan.textContent = 3;
             listaDicasOrdenarUl.innerHTML = '';
-            // O servidor já deve mandar as dicas embaralhadas
             tipsToGuess.forEach((tip, index) => {
                 const li = document.createElement('li');
                 li.textContent = tip.tip;
-                li.dataset.originalIndex = index; // Isso pode precisar de ajuste na lógica de verificação
+                li.dataset.originalTip = tip.tip; // Guardando a dica original
                 li.classList.add('sortable-item');
                 listaDicasOrdenarUl.appendChild(li);
             });
             if (sortable) sortable.destroy();
-            sortable = Sortable.create(listaDicasOrdenarUl);
+            sortable = Sortable.create(listaDicasOrdenarUl, {
+                animation: 150
+            });
         } else {
             nomeJogadorVezSpan.textContent = `Aguardando ${sorter.name} ordenar...`;
             ordenacaoSection.classList.add('hidden');
@@ -182,19 +193,18 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('orderResult', (result) => {
         if (result.isCorrect) {
             showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`);
+        } else {
+            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`);
+        }
+        
+        tentativasRestantesSpan.textContent = result.attemptsLeft;
+        
+        if (result.isCorrect || result.attemptsLeft === 0) {
             ordenacaoSection.classList.add('hidden');
             historicoRodadaDiv.classList.remove('hidden');
             listaHistoricoUl.innerHTML = result.historyHtml;
+            // CORREÇÃO: Mostrando o botão de próxima rodada
             btnProximaRodada.classList.remove('hidden');
-        } else {
-            showMessage('QUASE LÁ!', `Você errou a ordem. Tentativas restantes: ${result.attemptsLeft}`);
-            tentativasRestantesSpan.textContent = result.attemptsLeft;
-            if (result.attemptsLeft === 0) {
-                ordenacaoSection.classList.add('hidden');
-                historicoRodadaDiv.classList.remove('hidden');
-                listaHistoricoUl.innerHTML = result.historyHtml;
-                btnProximaRodada.classList.remove('hidden');
-            }
         }
     });
 
