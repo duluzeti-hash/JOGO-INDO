@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title> INDO - Pense com Estratégia e Argumente com Lógica</title>
+    <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+    <div id="container">
+
+        <header>
+            <h1>INDO</h1>
+            <h2>Pense com Estratégia e Argumente com Lógica</h2>
+            <div id="foto-adilson-container">
+                <img id="foto-adilson" src="imagens/foto-adilson.jpg" alt="Foto do Adilson" />
+                <p>Adilson Luzeti - Criador</p>
+            </div>
+        </header>
+
+        <section id="cadastro-jogadores">
+            <h3>Cadastro de Jogadores (até 8)</h3>
+            <input type="text" id="nome-jogador" placeholder="Digite o nome do jogador" maxlength="20" />
+            <button id="btn-add-jogador">Adicionar Jogador</button>
+            <button id="btn-reset-jogadores" class="btn-red">Resetar Jogadores</button>
+            <button id="btn-iniciar-jogo" class="btn-green hidden">Iniciar Jogo (Sortear Tema)</button>
+            <div id="lista-jogadores"></div>
+        </section>
+
+        <div id="painel-tema-manual" class="painel-entrada hidden">
+            <h3>Definir Tema Manualmente</h3>
+            <p>Se preferir não sortear, preencha os campos abaixo.</p>
+            <label for="categoria-manual">Categoria:</label>
+            <input type="text" id="categoria-manual" placeholder="Ex: Filmes, Animais, etc." autocomplete="off" />
+
+            <label for="tema-manual">Tema:</label>
+            <input type="text" id="tema-manual" placeholder="Ex: Star Wars, Leão, etc." autocomplete="off" />
+
+            <button id="btn-usar-manual">Usar Este Tema</button>
+        </div>
+        <section id="jogo" class="hidden">
+            <div id="info-rodada">
+                <h3>Rodada <span id="num-rodada">1</span></h3>
+                <p><strong>Categoria:</strong> <span id="categoria-rodada"></span></p>
+                <p><strong>Tema:</strong> <span id="tema-rodada"></span></p>
+            </div>
+
+            <div id="vez-jogador">
+                <p>Jogador da vez: <span id="nome-jogador-vez"></span></p>
+                <div id="numero-secreto-display" class="hidden">?</div>
+            </div>
+
+            <div id="espaco-dicas">
+                <h4>Digite a dica do jogador <span id="nome-jogador-dica"></span>:</h4>
+                <input type="text" id="input-dica" maxlength="50" placeholder="Digite a dica aqui" />
+                <button id="btn-enviar-dica">Enviar Dica</button>
+            </div>
+
+            <div id="lista-dicas-container">
+                <h4>Dicas da Rodada (ordenadas pelo número secreto)</h4>
+                <ul id="lista-dicas"></ul>
+            </div>
+
+            <section id="ordenacao-dicas" class="hidden">
+                <h4>Sua vez de ordenar as dicas!</h4>
+                <p>Arraste as dicas para a ordem que você acredita ser crescente.</p>
+                <ul id="lista-dicas-ordenar">
+                    </ul>
+                <p>Tentativas restantes: <span id="tentativas-restantes">3</span></p>
+                <button id="btn-ordenar" class="btn-green">Tentar Ordenar</button>
+                <div id="historico-rodada" class="hidden">
+                    <h4>Histórico da Rodada</h4>
+                    <ul id="lista-historico"></ul>
+                </div>
+            </section>
+
+            <button id="btn-proxima-rodada" class="btn-green hidden">Próxima Rodada</button>
+        </section>
+
+    </div>
+
+    <div id="mensagem-customizada" class="hidden">
+        <h4 id="mensagem-titulo"></h4>
+        <p id="mensagem-texto"></p>
+        <button id="btn-fechar-mensagem" class="btn-green">OK</button>
+    </div>
+
+    <audio id="musica" loop>
+        <source src="sons/musica.mp3" type="audio/mpeg" />
+    </audio>
+
+    <script src="https://cdn.jsdelivr.net/npm/sortablejs@1.15.0/Sortable.min.js"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
