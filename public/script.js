@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
-        mensagemCustomizada.className = 'mensagem-customizada'; // Limpa classes
+        mensagemCustomizada.className = 'mensagem-customizada';
         if (type === 'success') {
             mensagemCustomizada.classList.add('mensagem-sucesso');
         } else if (type === 'error') {
@@ -57,7 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
         listaJogadoresDiv.innerHTML = '<h4>Jogadores (Ranking):</h4>';
         players.forEach((player, index) => {
             const playerDiv = document.createElement('div');
-            playerDiv.innerHTML = `<span>${index + 1}º - ${player.name}</span><span>${player.score} pts</span>`;
+            playerDiv.innerHTML = `<span class="player-rank">${index + 1}º</span> <span class="player-name">${player.name}</span> <span class="player-score">${player.score} pts</span>`;
             playerDiv.classList.add('player-item');
             listaJogadoresDiv.appendChild(playerDiv);
         });
@@ -75,7 +75,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnResetJogadores.addEventListener('click', () => {
-        if (confirm('Tem certeza que deseja resetar todos os jogadores e o jogo?')) {
+        if (confirm('Tem certeza que deseja resetar o jogo e as pontuações?')) {
             socket.emit('resetPlayers');
         }
     });
@@ -163,7 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
         listaDicasUl.innerHTML = '<h4>Dicas Enviadas:</h4>';
         tips.forEach(tip => {
             const li = document.createElement('li');
-            li.textContent = tip.tip; // Só mostra a dica antes da ordenação
+            li.textContent = tip.tip;
             listaDicasUl.appendChild(li);
         });
         socket.emit('requestSorter');
