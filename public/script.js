@@ -1,186 +1,216 @@
-const express = require('express');
-const http = require('http');
-const path = require('path');
-const { Server } = require("socket.io");
+document.addEventListener('DOMContentLoaded', () => {
+    const socket = io();
 
-const app = express();
-const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+    // --- Seletores de Elementos ---
+    const cadastroSection = document.getElementById('cadastro-jogadores');
+    const jogoSection = document.getElementById('jogo');
+    const nomeJogadorInput = document.getElementById('nome-jogador');
+    const btnAddJogador = document.getElementById('btn-add-jogador');
+    const btnResetJogadores = document.getElementById('btn-reset-jogadores');
+    const listaJogadoresDiv = document.getElementById('lista-jogadores');
+    const btnIniciarJogo = document.getElementById('btn-iniciar-jogo');
 
-app.use(express.static(path.join(__dirname, 'public')));
+    const painelTemaManual = document.getElementById('painel-tema-manual');
+    const categoriaManualInput = document.getElementById('categoria-manual');
+    const temaManualInput = document.getElementById('tema-manual');
+    const btnUsarManual = document.getElementById('btn-usar-manual');
 
-const PORT = process.env.PORT || 3000;
+    const numRodadaSpan = document.getElementById('num-rodada');
+    const categoriaRodadaSpan = document.getElementById('categoria-rodada');
+    const temaRodadaSpan = document.getElementById('tema-rodada');
+    const nomeJogadorVezSpan = document.getElementById('nome-jogador-vez');
+    const numeroSecretoDisplay = document.getElementById('numero-secreto-display');
 
-let players = [];
-let currentTips = [];
+    const espacoDicas = document.getElementById('espaco-dicas');
+    const nomeJogadorDicaSpan = document.getElementById('nome-jogador-dica');
+    const inputDica = document.getElementById('input-dica');
+    const btnEnviarDica = document.getElementById('btn-enviar-dica');
+    const listaDicasUl = document.getElementById('lista-dicas');
 
-// Eventos de Socket.IO
-io.on('connection', (socket) => {
-  console.log('--- NOVO JOGADOR CONECTADO --- ID:', socket.id);
-  socket.emit('updatePlayers', players);
+    const ordenacaoSection = document.getElementById('ordenacao-dicas');
+    const listaDicasOrdenarUl = document.getElementById('lista-dicas-ordenar');
+    const tentativasRestantesSpan = document.getElementById('tentativas-restantes');
+    const btnOrdenar = document.getElementById('btn-ordenar');
 
-  socket.onAny((eventName, ...args) => {
-    console.log(`--- MENSAGEM RECEBIDA --- Evento: ${eventName}`, args);
-  });
+    const historicoRodadaDiv = document.getElementById('historico-rodada');
+    const listaHistoricoUl = document.getElementById('lista-historico');
+    const btnProximaRodada = document.getElementById('btn-proxima-rodada');
 
-  socket.on('addPlayer', (playerData) => {
-    console.log('--- EVENTO addPlayer RECONHECIDO ---', playerData);
-    const nameExists = players.some(p => p.name.toLowerCase() === playerData.name.toLowerCase());
-    if (nameExists) {
-        socket.emit('message', { type: 'error', title: 'Atenção!', text: 'Este nome já está cadastrado.' });
-        return;
-    }
-    const newPlayer = { id: socket.id, name: playerData.name };
-    players.push(newPlayer);
-    io.emit('updatePlayers', players);
-    console.log(`Jogador adicionado: ${playerData.name}. Jogadores totais:`, players.length);
-  });
-  
-  socket.on('resetPlayers', () => {
-    players = [];
-    currentTips = []; 
-    console.log('A lista de jogadores foi resetada.');
-    io.emit('updatePlayers', players);
-    io.emit('updateTips', []);
-  });
+    const mensagemCustomizada = document.getElementById('mensagem-customizada');
+    const mensagemTitulo = document.getElementById('mensagem-titulo');
+    const mensagemTexto = document.getElementById('mensagem-texto');
+    const btnFecharMensagem = document.getElementById('btn-fechar-mensagem');
+    
+    const musica = document.getElementById('musica');
 
-  socket.on('startGame', (gameData) => {
-    console.log('Pedido para iniciar o jogo recebido.');
-    currentTips = []; 
-    let categoria, tema;
+    let players = [];
+    let currentPlayerName = '';
+    let sortable;
 
-    if (gameData.tema === 'aleatorio') {
-        const temasPorCategoria = {
-            "NOÇÕES DE ADMINISTração GERAL": [
-                "Planejamento estratégico e sua relevância no mercado",
-                "Liderança e seus impactos na equipe",
-                "A cultura organizacional como vantagem competitiva",
-                "A gestão da inovação e o ciclo de vida da empresa",
-                "A ética e a transparência na governança corporativa"
-            ],
-            "ORGANIZAÇÃO DE DOCUMENTOS E CORRESPONDÊNCIAS": [
-                "Sistemas de arquivamento digital versus físico",
-                "Protocolos de segurança e confidencialidade de dados",
-                "A gestão eletrônica de documentos (GED) na otimização de processos",
-                "O impacto da desorganização de documentos na produtividade",
-                "A comunicação interna e externa na empresa"
-            ],
-            "GESTÃO DE PESSOAS": [
-                "Programas de motivação e engajamento da equipe",
-                "Políticas de diversidade, inclusão e equidade",
-                "Criação de um ambiente de trabalho psicologicamente seguro",
-                "Estratégias de retenção de talentos",
-                "Sistemas de feedback e avaliação de desempenho"
-            ],
-            "NOÇÕES DE DEPARTAMENTO PESSOAL": [
-                "Os desafios do eSocial para o Departamento Pessoal",
-                "A importância da comunicação clara sobre direitos trabalhistas",
-                "Gestão de benefícios corporativos como um diferencial",
-                "Estratégias para a redução do absenteísmo e da rotatividade",
-                "O papel da tecnologia na automação das rotinas de folha de pagamento"
-            ],
-            "NOÇÕES DE GESTÃO DE PROJETOS": [
-                "O planejamento e o escopo como pilares do projeto",
-                "Análise de riscos e planos de contingência",
-                "Metodologias Ágeis (Scrum, Kanban) e sua aplicação",
-                "A gestão de stakeholders e a comunicação do projeto",
-                "Alocação de recursos e gestão de cronograma"
-            ],
-            "LEGISLAÇÃO DO SETOR DE TRANSPORTE": [
-                "O impacto da legislação da ANTT nas operações",
-                "Normas sobre jornada de trabalho e descanso de motoristas",
-                "Regulamentação para o transporte de cargas perigosas",
-                "As diferenças legais entre transporte próprio e fretado",
-                "A conformidade ambiental e suas regulamentações"
-            ],
-            "CUSTOS OPERACIONAIS DO TRANSPORTE": [
-                "Análise de custos fixos e variáveis da frota",
-                "A gestão de combustíveis e a eficiência energética",
-                "O impacto da manutenção preventiva e corretiva",
-                "O uso da tecnologia (telemetria) na otimização de custos",
-                "Estratégias de roteirização para redução de despesas"
-            ],
-            "VISÃO SISTÊMICA DO TRANSPORTE": [
-                "A interdependência dos modais de transporte",
-                "Estratégias de logística reversa na cadeia de suprimentos",
-                "O papel da sincronia entre os setores para o resultado final",
-                "Integração tecnológica e compartilhamento de informações",
-                "O transporte como vetor de desenvolvimento socioeconômico"
-            ],
-            "ACESSIBILIDADE E MOBILIDADE URBANA": [
-                "Desafios do transporte público em grandes metrópoles",
-                "A implementação de faixas exclusivas e infraestrutura cicloviária",
-                "O impacto de aplicativos de transporte na mobilidade",
-                "Iniciativas para garantir a acessibilidade de pessoas com deficiência",
-                "O futuro da frota urbana: eletrificação e veículos autônomos"
-            ],
-            "Relações interpessoais Éticas e Sociais": [
-                "A comunicação não-violenta no ambiente de trabalho",
-                "O papel da empatia e do respeito nas relações de equipe",
-                "Gestão de conflitos e a busca por soluções construtivas",
-                "A ética no uso de informações confidenciais",
-                "Responsabilidade social corporativa (RSC) e seu impacto na comunidade"
-            ],
-            "Saúde segurança e Meio Ambiente com Qualidade de Vida": [
-                "Programas de ginástica laboral e ergonomia",
-                "A cultura de segurança do trabalho e a prevenção de acidentes",
-                "Iniciativas para o bem-estar mental dos colaboradores",
-                "Práticas de sustentabilidade e a gestão de resíduos",
-                "A importância da qualidade de vida na produtividade"
-            ],
-            "Noções de Educação Financeira": [
-                "Organização do orçamento pessoal e familiar",
-                "Estratégias de investimento de curto e longo prazo",
-                "Gestão de dívidas e o impacto no bem-estar",
-                "O planejamento financeiro para a aposentadoria",
-                "A diferença entre poupança e investimento"
-            ],
-            "Inovação, Tecnologia e economia 4.0": [
-                "O uso de Inteligência Artificial e Machine Learning",
-                "A cultura de inovação e o intraempreendedorismo",
-                "Impacto da automação na força de trabalho",
-                "Sistemas de cibersegurança e proteção de dados",
-                "Big Data e a tomada de decisão baseada em dados"
-            ]
-        };
-        const categorias = Object.keys(temasPorCategoria);
-        const categoriaSorteada = categorias[Math.floor(Math.random() * categorias.length)];
-        const temasDaCategoria = temasPorCategoria[categoriaSorteada];
-        const temaSorteado = temasDaCategoria[Math.floor(Math.random() * temasDaCategoria.length)];
-        categoria = categoriaSorteada;
-        tema = temaSorteado;
-    } else {
-        categoria = gameData.categoria;
-        tema = gameData.tema;
+    // --- Funções Auxiliares ---
+    function showMessage(title, text) {
+        mensagemTitulo.textContent = title;
+        mensagemTexto.textContent = text;
+        mensagemCustomizada.classList.remove('hidden');
     }
 
-    io.emit('gameStarted', { categoria, tema });
-    console.log(`Jogo iniciado! Categoria: ${categoria}, Tema: ${tema}`);
-  });
-
-  socket.on('sendTip', (tipData) => {
-    currentTips.push(tipData);
-    console.log(`Dica recebida de ${tipData.player.name}: ${tipData.tip}`);
-    io.emit('updateTips', currentTips);
-  });
-
-  socket.on('disconnect', () => {
-    console.log('Um jogador se desconectou. ID:', socket.id);
-
-    const playerLeft = players.find(p => p.id === socket.id);
-    if (playerLeft) {
-      players = players.filter(p => p.id !== socket.id);
-      console.log(`Jogador ${playerLeft.name} saiu da sala.`);
-      io.emit('updatePlayers', players);
+    function updatePlayerList(playerList) {
+        players = playerList;
+        listaJogadoresDiv.innerHTML = '<h4>Jogadores na Sala:</h4>';
+        players.forEach(player => {
+            const playerDiv = document.createElement('div');
+            playerDiv.textContent = player.name;
+            playerDiv.classList.add('player-item');
+            listaJogadoresDiv.appendChild(playerDiv);
+        });
+        const canStart = players.length >= 2;
+        btnIniciarJogo.classList.toggle('hidden', !canStart);
+        painelTemaManual.classList.toggle('hidden', !canStart);
     }
-  });
-});
 
-server.listen(PORT, () => {
-  console.log(`Servidor rodando em http://localhost:${PORT}`);
+    // --- Lógica de Cadastro ---
+    btnAddJogador.addEventListener('click', () => {
+        const name = nomeJogadorInput.value.trim();
+        if (name) {
+            currentPlayerName = name;
+            socket.emit('addPlayer', { name });
+            nomeJogadorInput.value = '';
+        }
+    });
+
+    btnResetJogadores.addEventListener('click', () => {
+        if (confirm('Tem certeza que deseja resetar todos os jogadores?')) {
+            socket.emit('resetPlayers');
+        }
+    });
+
+    // --- Lógica de Início de Jogo ---
+    btnIniciarJogo.addEventListener('click', () => {
+        socket.emit('startGame', { tema: 'aleatorio' });
+    });
+
+    btnUsarManual.addEventListener('click', () => {
+        const categoria = categoriaManualInput.value.trim();
+        const tema = temaManualInput.value.trim();
+        if (categoria && tema) {
+            socket.emit('startGame', { categoria, tema });
+        } else {
+            showMessage('Atenção!', 'Por favor, preencha a categoria e o tema.');
+        }
+    });
+
+    // --- Lógica da Rodada de Dicas ---
+    btnEnviarDica.addEventListener('click', () => {
+        const tip = inputDica.value.trim();
+        if (tip) {
+            const player = players.find(p => p.name === currentPlayerName);
+            const numeroSecreto = Math.floor(Math.random() * 100) + 1;
+            socket.emit('sendTip', { tip, number: numeroSecreto, player: player });
+            espacoDicas.classList.add('hidden');
+        }
+    });
+
+    // --- Lógica de Ordenação ---
+    btnOrdenar.addEventListener('click', () => {
+        const orderedItems = [...listaDicasOrdenarUl.children].map(item => item.dataset.originalIndex);
+        socket.emit('checkOrder', { orderedItems });
+    });
+
+    btnProximaRodada.addEventListener('click', () => {
+        socket.emit('startGame', { tema: 'aleatorio' });
+    });
+
+    btnFecharMensagem.addEventListener('click', () => {
+        mensagemCustomizada.classList.add('hidden');
+    });
+
+    // --- Eventos do Servidor (Socket.IO) ---
+    socket.on('connect', () => {
+        console.log('Conectado ao servidor!', socket.id);
+    });
+
+    socket.on('updatePlayers', updatePlayerList);
+
+    socket.on('gameStarted', (gameInfo) => {
+        cadastroSection.classList.add('hidden');
+        jogoSection.classList.remove('hidden');
+        ordenacaoSection.classList.add('hidden');
+        historicoRodadaDiv.classList.add('hidden');
+        btnProximaRodada.classList.add('hidden');
+        listaDicasUl.innerHTML = '';
+        
+        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent) + 1;
+        categoriaRodadaSpan.textContent = gameInfo.categoria;
+        temaRodadaSpan.textContent = gameInfo.tema;
+        
+        socket.emit('requestNextTipper');
+    });
+    
+    socket.on('nextTipper', (player) => {
+        nomeJogadorVezSpan.textContent = player.name;
+        if (player.id === socket.id) {
+            currentPlayerName = player.name;
+            espacoDicas.classList.remove('hidden');
+            nomeJogadorDicaSpan.textContent = player.name;
+            inputDica.value = '';
+            inputDica.focus();
+        } else {
+            espacoDicas.classList.add('hidden');
+        }
+    });
+
+    socket.on('allTipsReceived', (tips) => {
+        espacoDicas.classList.add('hidden');
+        listaDicasUl.innerHTML = '<h4>Dicas Enviadas:</h4>';
+        tips.forEach(tip => {
+            const li = document.createElement('li');
+            li.textContent = `${tip.player.name}: ${tip.tip}`;
+            listaDicasUl.appendChild(li);
+        });
+        socket.emit('requestSorter');
+    });
+
+    socket.on('yourTurnToSort', (tips) => {
+        nomeJogadorVezSpan.textContent = currentPlayerName + ' (Sua vez de ordenar!)';
+        ordenacaoSection.classList.remove('hidden');
+        tentativasRestantesSpan.textContent = 3;
+        listaDicasOrdenarUl.innerHTML = '';
+        tips.forEach((tip, index) => {
+            const li = document.createElement('li');
+            li.textContent = tip.tip;
+            li.dataset.originalIndex = index;
+            li.classList.add('sortable-item');
+            listaDicasOrdenarUl.appendChild(li);
+        });
+        if (sortable) sortable.destroy();
+        sortable = Sortable.create(listaDicasOrdenarUl);
+    });
+
+    socket.on('waitingForSorter', (sorterName) => {
+        nomeJogadorVezSpan.textContent = `Aguardando ${sorterName} ordenar...`;
+        ordenacaoSection.classList.add('hidden');
+    });
+    
+    socket.on('orderResult', (result) => {
+        if(result.isCorrect) {
+            showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`);
+            ordenacaoSection.classList.add('hidden');
+            historicoRodadaDiv.classList.remove('hidden');
+            listaHistoricoUl.innerHTML = result.historyHtml;
+            btnProximaRodada.classList.remove('hidden');
+        } else {
+            showMessage('QUASE LÁ!', `Você errou a ordem. Itens corretos: ${result.correctCount}. Tentativas restantes: ${result.attemptsLeft}`);
+            tentativasRestantesSpan.textContent = result.attemptsLeft;
+            if (result.attemptsLeft === 0) {
+                ordenacaoSection.classList.add('hidden');
+                historicoRodadaDiv.classList.remove('hidden');
+                listaHistoricoUl.innerHTML = result.historyHtml;
+                btnProximaRodada.classList.remove('hidden');
+            }
+        }
+    });
+
+    socket.on('message', (msg) => {
+        showMessage(msg.title, msg.text);
+    });
 });
