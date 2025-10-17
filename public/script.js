@@ -43,7 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
-        mensagemCustomizada.className = ''; // Limpa classes antigas
+        mensagemCustomizada.className = 'mensagem-customizada'; // Limpa classes
         if (type === 'success') {
             mensagemCustomizada.classList.add('mensagem-sucesso');
         } else if (type === 'error') {
@@ -159,10 +159,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('allTipsReceived', (tips) => {
         espacoDicas.classList.add('hidden');
+        numeroSecretoDisplay.classList.add('hidden');
         listaDicasUl.innerHTML = '<h4>Dicas Enviadas:</h4>';
         tips.forEach(tip => {
             const li = document.createElement('li');
-            li.textContent = tip.tip;
+            li.textContent = tip.tip; // Só mostra a dica antes da ordenação
             listaDicasUl.appendChild(li);
         });
         socket.emit('requestSorter');
@@ -176,7 +177,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listaDicasOrdenarUl.innerHTML = '';
             tipsToGuess.forEach((tip) => {
                 const li = document.createElement('li');
-                li.textContent = tip; // O servidor manda apenas o texto da dica
+                li.textContent = tip;
                 li.classList.add('sortable-item');
                 listaDicasOrdenarUl.appendChild(li);
             });
@@ -189,12 +190,10 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     socket.on('orderResult', (result) => {
-        // Atualiza a lista de jogadores/ranking para todos
         if (result.players) {
             updatePlayerList(result.players);
         }
         
-        // Mensagem específica para o jogador que ordenou
         if (socket.id === result.sorterId || result.attemptsLeft === 0) {
             if (result.isCorrect) {
                 showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`, 'success');
