@@ -1,4 +1,4 @@
-ocument.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', () => {
     const socket = io();
 
     // --- Seletores de Elementos ---
@@ -197,3 +197,4 @@ ocument.addEventListener('DOMContentLoaded', () => {
 
     socket.on('message', (msg) => showMessage(msg.title, msg.text));
 });
+
