@@ -5,12 +5,7 @@ const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, {
-  cors: {
-    origin: "*",
-    methods: ["GET", "POST"]
-  }
-});
+const io = new Server(server);
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -29,7 +24,7 @@ io.on('connection', (socket) => {
         if (nameExists) {
             return socket.emit('message', { type: 'error', title: 'Atenção!', text: 'Este nome já está cadastrado.' });
         }
-        const newPlayer = { id: socket.id, name: playerData.name };
+        const newPlayer = { id: socket.id, name: playerData.name, score: 0 };
         players.push(newPlayer);
         io.emit('updatePlayers', players);
     });
@@ -38,8 +33,7 @@ io.on('connection', (socket) => {
         players = [];
         currentTips = [];
         roundData = {};
-        io.emit('updatePlayers', players);
-        io.emit('updateTips', []);
+        io.emit('resetGame');
     });
 
     socket.on('startGame', (gameData) => {
@@ -72,6 +66,7 @@ io.on('connection', (socket) => {
             tema = gameData.tema;
         }
         roundData = { tippers: [...players], sorterIndex: 0, attemptsLeft: 3 };
+        // CORREÇÃO CRÍTICA: GARANTE QUE TODOS, INCLUSIVE QUEM CLICOU, RECEBAM A MENSAGEM
         io.emit('gameStarted', { categoria, tema });
     });
 
@@ -80,26 +75,19 @@ io.on('connection', (socket) => {
             const nextTipper = players[currentTips.length];
             io.emit('nextTipper', nextTipper);
         } else {
-            // Quando todos derem as dicas, ordena e envia para todos
             const sortedTips = [...currentTips].sort((a, b) => a.number - b.number);
             io.emit('allTipsReceived', sortedTips);
         }
     });
 
     socket.on('sendTip', (tipData) => {
-        // CORREÇÃO CRÍTICA: O servidor identifica o jogador, não confia no cliente.
         const player = players.find(p => p.id === socket.id);
         if (!player) return console.log('ERRO: Dica recebida de um jogador desconhecido.');
 
-        const newTip = {
-            ...tipData, // tip e number
-            player: { name: player.name, id: player.id } // Adiciona o jogador identificado pelo servidor
-        };
-
-        console.log('[SERVIDOR] Dica recebida e processada:', newTip);
+        const newTip = { ...tipData, player: { name: player.name, id: player.id } };
         currentTips.push(newTip);
         
-        // Em vez de enviar as dicas a cada dica, apenas chama o próximo jogador.
+        // CORREÇÃO CRÍTICA: A LÓGICA DEVE ESTAR AQUI, NÃO EM 'requestNextTipper'
         if (currentTips.length < players.length) {
             const nextTipper = players[currentTips.length];
             io.emit('nextTipper', nextTipper);
@@ -111,33 +99,37 @@ io.on('connection', (socket) => {
 
     socket.on('requestSorter', () => {
         const sorter = players[roundData.sorterIndex];
-        // Envia as dicas embaralhadas para o jogador que vai ordenar
         const shuffledTips = [...currentTips].sort(() => Math.random() - 0.5);
-        io.emit('updateSorter', sorter, shuffledTips.map(t => ({ tip: t.tip })));
+        io.emit('updateSorter', sorter, shuffledTips.map(t => ({ tip: t.tip, originalPlayer: t.player.name })));
     });
 
-    socket.on('checkOrder', ({ orderedItems }) => {
-        const correctOrderMap = currentTips.map(tip => tip.tip);
+    socket.on('checkOrder', ({ orderedTips }) => {
+        roundData.attemptsLeft--;
+        
+        const correctOrder = currentTips.map(t => t.tip);
         let correctCount = 0;
         let isCorrect = true;
-        
-        for (let i = 0; i < correctOrderMap.length; i++) {
-            // A lógica aqui precisa ser ajustada para comparar as dicas, não os índices.
-            // Esta parte é complexa e pode precisar de revisão, mas vamos focar no fluxo principal primeiro.
+        for (let i = 0; i < correctOrder.length; i++) {
+            if (orderedTips[i].tip === correctOrder[i]) {
+                correctCount++;
+            } else {
+                isCorrect = false;
+            }
         }
         
-        roundData.attemptsLeft--;
-        const historyHtml = currentTips.map(t => `<li>${t.number} - ${t.tip} (${t.player.name})</li>`).join('');
-
-        // Simplificando a lógica por enquanto
-        isCorrect = (Math.random() > 0.5); // Simulação
+        const historyHtml = currentTips.map(t => `<li><b>${t.number}</b> - ${t.tip} <i>(${t.player.name})</i></li>`).join('');
+        const points = isCorrect ? (roundData.attemptsLeft + 2) * 10 : 0; // +2 porque o attemptsLeft já foi decrementado
+        
+        if (isCorrect) {
+            const sorterPlayer = players.find(p => p.id === socket.id);
+            if(sorterPlayer) sorterPlayer.score += points;
+        }
 
         if (isCorrect || roundData.attemptsLeft === 0) {
-            const points = isCorrect ? (roundData.attemptsLeft + 1) * 10 : 0;
-            socket.emit('orderResult', { isCorrect, points, attemptsLeft: roundData.attemptsLeft, historyHtml });
             roundData.sorterIndex = (roundData.sorterIndex + 1) % players.length;
+            io.emit('orderResult', { isCorrect, points, attemptsLeft: 0, historyHtml, players: players.sort((a, b) => b.score - a.score) });
         } else {
-            socket.emit('orderResult', { isCorrect: false, correctCount, attemptsLeft: roundData.attemptsLeft });
+            socket.emit('orderResult', { isCorrect: false, correctCount, attemptsLeft: roundData.attemptsLeft, players: players.sort((a, b) => b.score - a.score) });
         }
     });
 
@@ -145,7 +137,6 @@ io.on('connection', (socket) => {
         const playerLeft = players.find(p => p.id === socket.id);
         if (playerLeft) {
             players = players.filter(p => p.id !== socket.id);
-            console.log(`[SERVIDOR] Jogador ${playerLeft.name} saiu.`);
             io.emit('updatePlayers', players);
         }
     });
