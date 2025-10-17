@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', () => {
+ocument.addEventListener('DOMContentLoaded', () => {
     const socket = io();
 
     // --- Seletores de Elementos ---
@@ -9,45 +9,36 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnResetJogadores = document.getElementById('btn-reset-jogadores');
     const listaJogadoresDiv = document.getElementById('lista-jogadores');
     const btnIniciarJogo = document.getElementById('btn-iniciar-jogo');
-
     const painelTemaManual = document.getElementById('painel-tema-manual');
     const categoriaManualInput = document.getElementById('categoria-manual');
     const temaManualInput = document.getElementById('tema-manual');
     const btnUsarManual = document.getElementById('btn-usar-manual');
-
     const numRodadaSpan = document.getElementById('num-rodada');
     const categoriaRodadaSpan = document.getElementById('categoria-rodada');
     const temaRodadaSpan = document.getElementById('tema-rodada');
     const nomeJogadorVezSpan = document.getElementById('nome-jogador-vez');
     const numeroSecretoDisplay = document.getElementById('numero-secreto-display');
-
     const espacoDicas = document.getElementById('espaco-dicas');
     const nomeJogadorDicaSpan = document.getElementById('nome-jogador-dica');
     const inputDica = document.getElementById('input-dica');
     const btnEnviarDica = document.getElementById('btn-enviar-dica');
     const listaDicasUl = document.getElementById('lista-dicas');
-
     const ordenacaoSection = document.getElementById('ordenacao-dicas');
     const listaDicasOrdenarUl = document.getElementById('lista-dicas-ordenar');
     const tentativasRestantesSpan = document.getElementById('tentativas-restantes');
     const btnOrdenar = document.getElementById('btn-ordenar');
-
     const historicoRodadaDiv = document.getElementById('historico-rodada');
     const listaHistoricoUl = document.getElementById('lista-historico');
     const btnProximaRodada = document.getElementById('btn-proxima-rodada');
-
     const mensagemCustomizada = document.getElementById('mensagem-customizada');
     const mensagemTitulo = document.getElementById('mensagem-titulo');
     const mensagemTexto = document.getElementById('mensagem-texto');
     const btnFecharMensagem = document.getElementById('btn-fechar-mensagem');
     
-    const musica = document.getElementById('musica');
-
     let players = [];
     let currentPlayerName = '';
     let sortable;
 
-    // --- Funções Auxiliares ---
     function showMessage(title, text) {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
@@ -68,7 +59,6 @@ document.addEventListener('DOMContentLoaded', () => {
         painelTemaManual.classList.toggle('hidden', !canStart);
     }
 
-    // --- Lógica de Cadastro ---
     btnAddJogador.addEventListener('click', () => {
         const name = nomeJogadorInput.value.trim();
         if (name) {
@@ -84,11 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Lógica de Início de Jogo ---
-    btnIniciarJogo.addEventListener('click', () => {
-        socket.emit('startGame', { tema: 'aleatorio' });
-    });
-
+    btnIniciarJogo.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
     btnUsarManual.addEventListener('click', () => {
         const categoria = categoriaManualInput.value.trim();
         const tema = temaManualInput.value.trim();
@@ -99,36 +85,34 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // --- Lógica da Rodada de Dicas ---
     btnEnviarDica.addEventListener('click', () => {
         const tip = inputDica.value.trim();
         if (tip) {
-            const player = players.find(p => p.name === currentPlayerName);
+            const player = players.find(p => p.id === socket.id);
             const numeroSecreto = Math.floor(Math.random() * 100) + 1;
-            socket.emit('sendTip', { tip, number: numeroSecreto, player: player });
+            numeroSecretoDisplay.textContent = numeroSecreto;
+            numeroSecretoDisplay.classList.remove('hidden');
+            
+            const tipData = { tip, number: numeroSecreto, player: player };
+            console.log('[CLIENTE] Enviando dica para o servidor:', tipData);
+            socket.emit('sendTip', tipData);
             espacoDicas.classList.add('hidden');
         }
     });
 
-    // --- Lógica de Ordenação ---
     btnOrdenar.addEventListener('click', () => {
         const orderedItems = [...listaDicasOrdenarUl.children].map(item => item.dataset.originalIndex);
         socket.emit('checkOrder', { orderedItems });
     });
 
     btnProximaRodada.addEventListener('click', () => {
+        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent) + 1;
         socket.emit('startGame', { tema: 'aleatorio' });
     });
 
-    btnFecharMensagem.addEventListener('click', () => {
-        mensagemCustomizada.classList.add('hidden');
-    });
+    btnFecharMensagem.addEventListener('click', () => mensagemCustomizada.classList.add('hidden'));
 
-    // --- Eventos do Servidor (Socket.IO) ---
-    socket.on('connect', () => {
-        console.log('Conectado ao servidor!', socket.id);
-    });
-
+    socket.on('connect', () => console.log('[CLIENTE] Conectado ao servidor com sucesso!'));
     socket.on('updatePlayers', updatePlayerList);
 
     socket.on('gameStarted', (gameInfo) => {
@@ -138,16 +122,15 @@ document.addEventListener('DOMContentLoaded', () => {
         historicoRodadaDiv.classList.add('hidden');
         btnProximaRodada.classList.add('hidden');
         listaDicasUl.innerHTML = '';
-        
-        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent) + 1;
         categoriaRodadaSpan.textContent = gameInfo.categoria;
         temaRodadaSpan.textContent = gameInfo.tema;
-        
         socket.emit('requestNextTipper');
     });
     
     socket.on('nextTipper', (player) => {
+        console.log("[CLIENTE] É a vez de", player.name, "dar a dica.");
         nomeJogadorVezSpan.textContent = player.name;
+        numeroSecretoDisplay.classList.add('hidden');
         if (player.id === socket.id) {
             currentPlayerName = player.name;
             espacoDicas.classList.remove('hidden');
@@ -160,39 +143,41 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('allTipsReceived', (tips) => {
+        console.log('[CLIENTE] Todas as dicas foram recebidas. Solicitando quem vai ordenar.');
         espacoDicas.classList.add('hidden');
-        listaDicasUl.innerHTML = '<h4>Dicas Enviadas:</h4>';
+        listaDicasUl.innerHTML = '<h4>Dicas Enviadas (ordem correta):</h4>';
         tips.forEach(tip => {
             const li = document.createElement('li');
-            li.textContent = `${tip.player.name}: ${tip.tip}`;
+            li.textContent = `${tip.number} - ${tip.tip} (${tip.player.name})`;
             listaDicasUl.appendChild(li);
         });
         socket.emit('requestSorter');
     });
 
-    socket.on('yourTurnToSort', (tips) => {
-        nomeJogadorVezSpan.textContent = currentPlayerName + ' (Sua vez de ordenar!)';
-        ordenacaoSection.classList.remove('hidden');
-        tentativasRestantesSpan.textContent = 3;
-        listaDicasOrdenarUl.innerHTML = '';
-        tips.forEach((tip, index) => {
-            const li = document.createElement('li');
-            li.textContent = tip.tip;
-            li.dataset.originalIndex = index;
-            li.classList.add('sortable-item');
-            listaDicasOrdenarUl.appendChild(li);
-        });
-        if (sortable) sortable.destroy();
-        sortable = Sortable.create(listaDicasOrdenarUl);
-    });
-
-    socket.on('waitingForSorter', (sorterName) => {
-        nomeJogadorVezSpan.textContent = `Aguardando ${sorterName} ordenar...`;
-        ordenacaoSection.classList.add('hidden');
+    socket.on('updateSorter', (sorter, tipsToGuess) => {
+        console.log('[CLIENTE]', sorter.name, 'foi escolhido para ordenar.');
+        if (sorter.id === socket.id) {
+            nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
+            ordenacaoSection.classList.remove('hidden');
+            tentativasRestantesSpan.textContent = 3;
+            listaDicasOrdenarUl.innerHTML = '';
+            tipsToGuess.forEach((tip, index) => {
+                const li = document.createElement('li');
+                li.textContent = tip.tip;
+                li.dataset.originalIndex = index;
+                li.classList.add('sortable-item');
+                listaDicasOrdenarUl.appendChild(li);
+            });
+            if (sortable) sortable.destroy();
+            sortable = Sortable.create(listaDicasOrdenarUl);
+        } else {
+            nomeJogadorVezSpan.textContent = `Aguardando ${sorter.name} ordenar...`;
+            ordenacaoSection.classList.add('hidden');
+        }
     });
     
     socket.on('orderResult', (result) => {
-        if(result.isCorrect) {
+        if (result.isCorrect) {
             showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`);
             ordenacaoSection.classList.add('hidden');
             historicoRodadaDiv.classList.remove('hidden');
@@ -210,7 +195,5 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    socket.on('message', (msg) => {
-        showMessage(msg.title, msg.text);
-    });
+    socket.on('message', (msg) => showMessage(msg.title, msg.text));
 });
