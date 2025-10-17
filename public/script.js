@@ -88,14 +88,15 @@ document.addEventListener('DOMContentLoaded', () => {
     btnEnviarDica.addEventListener('click', () => {
         const tip = inputDica.value.trim();
         if (tip) {
-            const player = players.find(p => p.id === socket.id);
             const numeroSecreto = Math.floor(Math.random() * 100) + 1;
             numeroSecretoDisplay.textContent = numeroSecreto;
             numeroSecretoDisplay.classList.remove('hidden');
             
-            const tipData = { tip, number: numeroSecreto, player: player };
+            // CORREÇÃO CRÍTICA: O cliente não tenta se identificar. Ele só envia a missão.
+            const tipData = { tip, number: numeroSecreto };
             console.log('[CLIENTE] Enviando dica para o servidor:', tipData);
             socket.emit('sendTip', tipData);
+            
             espacoDicas.classList.add('hidden');
         }
     });
@@ -124,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
         listaDicasUl.innerHTML = '';
         categoriaRodadaSpan.textContent = gameInfo.categoria;
         temaRodadaSpan.textContent = gameInfo.tema;
+        // CORREÇÃO CRÍTICA: O cliente pede ao servidor para começar a rodada de dicas.
         socket.emit('requestNextTipper');
     });
     
@@ -143,9 +145,9 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('allTipsReceived', (tips) => {
-        console.log('[CLIENTE] Todas as dicas foram recebidas. Solicitando quem vai ordenar.');
+        console.log('[CLIENTE] Todas as dicas foram recebidas:', tips);
         espacoDicas.classList.add('hidden');
-        listaDicasUl.innerHTML = '<h4>Dicas Enviadas (ordem correta):</h4>';
+        listaDicasUl.innerHTML = '<h4>Dicas Enviadas (já ordenadas):</h4>';
         tips.forEach(tip => {
             const li = document.createElement('li');
             li.textContent = `${tip.number} - ${tip.tip} (${tip.player.name})`;
@@ -161,10 +163,11 @@ document.addEventListener('DOMContentLoaded', () => {
             ordenacaoSection.classList.remove('hidden');
             tentativasRestantesSpan.textContent = 3;
             listaDicasOrdenarUl.innerHTML = '';
+            // O servidor já deve mandar as dicas embaralhadas
             tipsToGuess.forEach((tip, index) => {
                 const li = document.createElement('li');
                 li.textContent = tip.tip;
-                li.dataset.originalIndex = index;
+                li.dataset.originalIndex = index; // Isso pode precisar de ajuste na lógica de verificação
                 li.classList.add('sortable-item');
                 listaDicasOrdenarUl.appendChild(li);
             });
@@ -184,7 +187,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listaHistoricoUl.innerHTML = result.historyHtml;
             btnProximaRodada.classList.remove('hidden');
         } else {
-            showMessage('QUASE LÁ!', `Você errou a ordem. Itens corretos: ${result.correctCount}. Tentativas restantes: ${result.attemptsLeft}`);
+            showMessage('QUASE LÁ!', `Você errou a ordem. Tentativas restantes: ${result.attemptsLeft}`);
             tentativasRestantesSpan.textContent = result.attemptsLeft;
             if (result.attemptsLeft === 0) {
                 ordenacaoSection.classList.add('hidden');
@@ -197,4 +200,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('message', (msg) => showMessage(msg.title, msg.text));
 });
-
