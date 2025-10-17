@@ -13,7 +13,7 @@ const PORT = process.env.PORT || 3000;
 
 let players = [];
 let currentTips = [];
-let roundData = { sorterIndex: -1 }; // Começa com -1 para a primeira rodada ser o índice 0
+let roundData = { sorterIndex: -1 };
 
 io.on('connection', (socket) => {
     console.log('[SERVIDOR] Novo jogador conectado:', socket.id);
@@ -30,7 +30,7 @@ io.on('connection', (socket) => {
     });
 
     socket.on('resetPlayers', () => {
-        players = [];
+        players.forEach(p => p.score = 0);
         currentTips = [];
         roundData = { sorterIndex: -1 };
         io.emit('resetGame');
@@ -106,17 +106,9 @@ io.on('connection', (socket) => {
         roundData.attemptsLeft--;
         
         const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
-        let correctCount = 0;
-        let isCorrect = true;
-        for (let i = 0; i < correctOrder.length; i++) {
-            if (orderedTips[i] === correctOrder[i]) {
-                correctCount++;
-            } else {
-                isCorrect = false;
-            }
-        }
+        let isCorrect = orderedTips.length === correctOrder.length && orderedTips.every((value, index) => value === correctOrder[index]);
         
-        const historyHtml = currentTips.sort((a,b) => a.number - b.number).map(t => `<li><b>${t.number}</b> - ${t.tip} <i>(${t.player.name})</i></li>`).join('');
+        const historyHtml = [...currentTips].sort((a,b) => a.number - b.number).map(t => `<li><b>${t.number}</b> - ${t.tip} <i>(${t.player.name})</i></li>`).join('');
         const points = isCorrect ? (roundData.attemptsLeft + 1) * 10 : 0;
         
         const sorterPlayer = players.find(p => p.id === socket.id);
@@ -129,7 +121,7 @@ io.on('connection', (socket) => {
         if (isCorrect || roundData.attemptsLeft === 0) {
             io.emit('orderResult', { isCorrect, points, attemptsLeft: 0, historyHtml, players: rankedPlayers, sorterId: socket.id });
         } else {
-            socket.emit('orderResult', { isCorrect: false, correctCount, attemptsLeft: roundData.attemptsLeft, players: rankedPlayers, sorterId: socket.id });
+            socket.emit('orderResult', { isCorrect: false, attemptsLeft: roundData.attemptsLeft, players: rankedPlayers, sorterId: socket.id });
         }
     });
 
@@ -145,4 +137,3 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
-
