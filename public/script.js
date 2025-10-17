@@ -37,21 +37,26 @@ document.addEventListener('DOMContentLoaded', () => {
     const musica = document.getElementById('musica');
     
     let players = [];
-    let currentPlayerName = '';
+    let currentSecretNumber = 0;
     let sortable;
 
-    function showMessage(title, text) {
+    function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
+        mensagemCustomizada.className = ''; // Limpa classes antigas
+        if (type === 'success') {
+            mensagemCustomizada.classList.add('mensagem-sucesso');
+        } else if (type === 'error') {
+            mensagemCustomizada.classList.add('mensagem-erro');
+        }
         mensagemCustomizada.classList.remove('hidden');
     }
 
     function updatePlayerList(playerList) {
         players = playerList;
-        listaJogadoresDiv.innerHTML = '<h4>Jogadores na Sala:</h4>';
+        listaJogadoresDiv.innerHTML = '<h4>Jogadores (Ranking):</h4>';
         players.forEach((player, index) => {
             const playerDiv = document.createElement('div');
-            // MOSTRA O RANKING
             playerDiv.innerHTML = `<span>${index + 1}º - ${player.name}</span><span>${player.score} pts</span>`;
             playerDiv.classList.add('player-item');
             listaJogadoresDiv.appendChild(playerDiv);
@@ -64,14 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
     btnAddJogador.addEventListener('click', () => {
         const name = nomeJogadorInput.value.trim();
         if (name) {
-            currentPlayerName = name;
             socket.emit('addPlayer', { name });
             nomeJogadorInput.value = '';
         }
     });
 
     btnResetJogadores.addEventListener('click', () => {
-        if (confirm('Tem certeza que deseja resetar todos os jogadores e voltar para a tela de cadastro?')) {
+        if (confirm('Tem certeza que deseja resetar todos os jogadores e o jogo?')) {
             socket.emit('resetPlayers');
         }
     });
@@ -83,22 +87,16 @@ document.addEventListener('DOMContentLoaded', () => {
         if (categoria && tema) {
             socket.emit('startGame', { categoria, tema });
         } else {
-            showMessage('Atenção!', 'Por favor, preencha a categoria e o tema.');
+            showMessage('Atenção!', 'Por favor, preencha a categoria e o tema.', 'error');
         }
     });
 
     btnEnviarDica.addEventListener('click', () => {
         const tip = inputDica.value.trim();
         if (tip) {
-            const numeroSecreto = Math.floor(Math.random() * 100) + 1;
-            // CORREÇÃO: MOSTRANDO O NÚMERO SECRETO NA TELA
-            numeroSecretoDisplay.textContent = numeroSecreto;
-            numeroSecretoDisplay.classList.remove('hidden');
-            
-            const tipData = { tip, number: numeroSecreto };
+            const tipData = { tip, number: currentSecretNumber };
             socket.emit('sendTip', tipData);
             
-            // CORREÇÃO: Desabilita o campo em vez de esconder a seção
             inputDica.disabled = true;
             btnEnviarDica.disabled = true;
         }
@@ -106,9 +104,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnOrdenar.addEventListener('click', () => {
         if (sortable) {
-            // A lógica de ordenação precisa ser refeita para ser mais robusta
-            const orderedItems = sortable.toArray(); // Envia os textos das dicas ordenadas
-            socket.emit('checkOrder', { orderedTips: orderedItems });
+            const orderedTips = sortable.toArray();
+            socket.emit('checkOrder', { orderedTips });
         }
     });
 
@@ -116,15 +113,10 @@ document.addEventListener('DOMContentLoaded', () => {
     btnFecharMensagem.addEventListener('click', () => mensagemCustomizada.classList.add('hidden'));
 
     socket.on('connect', () => console.log('[CLIENTE] Conectado ao servidor com sucesso!'));
-    
-    socket.on('resetGame', () => {
-        window.location.reload();
-    });
-
+    socket.on('resetGame', () => window.location.reload());
     socket.on('updatePlayers', updatePlayerList);
 
     socket.on('gameStarted', (gameInfo) => {
-        // CORREÇÃO: LIGANDO A MÚSICA
         if (musica.paused) {
             musica.play().catch(e => console.log("A reprodução automática foi bloqueada."));
         }
@@ -136,7 +128,9 @@ document.addEventListener('DOMContentLoaded', () => {
         btnProximaRodada.classList.add('hidden');
         listaDicasUl.innerHTML = '';
         
-        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
+        const currentRound = parseInt(numRodadaSpan.textContent || 0) + 1;
+        numRodadaSpan.textContent = currentRound;
+        
         categoriaRodadaSpan.textContent = gameInfo.categoria;
         temaRodadaSpan.textContent = gameInfo.tema;
         
@@ -145,20 +139,21 @@ document.addEventListener('DOMContentLoaded', () => {
     
     socket.on('nextTipper', (player) => {
         nomeJogadorVezSpan.textContent = player.name;
-        // CORREÇÃO: Mostrando o nome do jogador da vez na caixa de dica
         nomeJogadorDicaSpan.textContent = player.name;
-        numeroSecretoDisplay.classList.add('hidden');
         
         if (player.id === socket.id) {
-            currentPlayerName = player.name;
+            currentSecretNumber = Math.floor(Math.random() * 100) + 1;
+            numeroSecretoDisplay.textContent = currentSecretNumber;
+            numeroSecretoDisplay.classList.remove('hidden');
+
             espacoDicas.classList.remove('hidden');
-            // CORREÇÃO: Reabilita o campo para o novo jogador
             inputDica.disabled = false;
             btnEnviarDica.disabled = false;
             inputDica.value = '';
             inputDica.focus();
         } else {
             espacoDicas.classList.add('hidden');
+            numeroSecretoDisplay.classList.add('hidden');
         }
     });
 
@@ -181,7 +176,7 @@ document.addEventListener('DOMContentLoaded', () => {
             listaDicasOrdenarUl.innerHTML = '';
             tipsToGuess.forEach((tip) => {
                 const li = document.createElement('li');
-                li.textContent = tip.tip;
+                li.textContent = tip; // O servidor manda apenas o texto da dica
                 li.classList.add('sortable-item');
                 listaDicasOrdenarUl.appendChild(li);
             });
@@ -194,14 +189,20 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     socket.on('orderResult', (result) => {
-        updatePlayerList(result.players);
+        // Atualiza a lista de jogadores/ranking para todos
+        if (result.players) {
+            updatePlayerList(result.players);
+        }
         
-        if (result.isCorrect) {
-            showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`);
-        } else if (result.attemptsLeft > 0) {
-            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`);
-        } else {
-            showMessage('FIM DAS TENTATIVAS!', 'Não foi desta vez. Veja a ordem correta abaixo.');
+        // Mensagem específica para o jogador que ordenou
+        if (socket.id === result.sorterId || result.attemptsLeft === 0) {
+            if (result.isCorrect) {
+                showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`, 'success');
+            } else if (result.attemptsLeft > 0) {
+                showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+            } else {
+                showMessage('FIM DAS TENTATIVAS!', 'Não foi desta vez. Veja a ordem correta abaixo.', 'error');
+            }
         }
         
         tentativasRestantesSpan.textContent = result.attemptsLeft;
@@ -210,10 +211,9 @@ document.addEventListener('DOMContentLoaded', () => {
             ordenacaoSection.classList.add('hidden');
             historicoRodadaDiv.classList.remove('hidden');
             listaHistoricoUl.innerHTML = result.historyHtml;
-            // CORREÇÃO: Mostrando o botão de próxima rodada
             btnProximaRodada.classList.remove('hidden');
         }
     });
 
-    socket.on('message', (msg) => showMessage(msg.title, msg.text));
+    socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 });
