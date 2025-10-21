@@ -5,7 +5,6 @@ const { Server } = require("socket.io");
 
 const app = express();
 const server = http.createServer(app);
-// CORREÇÃO DE CORS (ESSENCIAL PARA O RENDER)
 const io = new Server(server, {
   cors: {
     origin: "*",
@@ -19,7 +18,7 @@ const PORT = process.env.PORT || 3000;
 
 let players = [];
 let currentTips = [];
-let roundData = { sorterIndex: -1 }; // Mantém a lógica de turnos
+let roundData = { sorterIndex: -1 }; 
 
 io.on('connection', (socket) => {
     console.log('[SERVIDOR] Novo jogador conectado:', socket.id);
@@ -30,17 +29,16 @@ io.on('connection', (socket) => {
         if (nameExists) {
             return socket.emit('message', { type: 'error', title: 'Atenção!', text: 'Este nome já está cadastrado.' });
         }
-        // Lógica de pontuação do GitHub
         const newPlayer = { id: socket.id, name: playerData.name, score: 0 }; 
         players.push(newPlayer);
         io.emit('updatePlayers', players);
     });
 
     socket.on('resetPlayers', () => {
-        players.forEach(p => p.score = 0); // Lógica de pontuação do GitHub
+        players.forEach(p => p.score = 0); 
         currentTips = [];
         roundData = { sorterIndex: -1 };
-        io.emit('resetGame'); // Lógica de reset do GitHub
+        io.emit('resetGame'); 
     });
 
     socket.on('startGame', (gameData) => {
@@ -48,7 +46,6 @@ io.on('connection', (socket) => {
         let categoria, tema;
         
         if (gameData.tema === 'aleatorio') {
-            // LISTA DE TEMAS COMPLETA (DO SEU ARQUIVO LOCAL ORIGINAL)
             const temasPorCategoria = {
                 "NOÇÕES DE ADMINISTRAÇÃO GERAL": [
                     "Planejamento estratégico e sua relevância no mercado",
@@ -113,28 +110,28 @@ io.on('connection', (socket) => {
                     "Iniciativas para garantir a acessibilidade de pessoas com deficiência",
                     "O futuro da frota urbana: eletrificação e veículos autônomos"
                 ],
-                "Relações interpessoais Éticas e Sociais": [ // (Mantive o nome da categoria como veio no original)
+                "Relações interpessoais Éticas e Sociais": [ 
                     "A comunicação não-violenta no ambiente de trabalho",
                     "O papel da empatia e do respeito nas relações de equipe",
                     "Gestão de conflitos e a busca por soluções construtivas",
                     "A ética no uso de informações confidenciais",
                     "Responsabilidade social corporativa (RSC) e seu impacto na comunidade"
                 ],
-                "Saúde segurança e Meio Ambiente com Qualidade de Vida": [ // (Mantive o nome da categoria como veio no original)
+                "Saúde segurança e Meio Ambiente com Qualidade de Vida": [ 
                     "Programas de ginástica laboral e ergonomia",
                     "A cultura de segurança do trabalho e a prevenção de acidentes",
                     "Iniciativas para o bem-estar mental dos colaboradores",
                     "Práticas de sustentabilidade e a gestão de resíduos",
                     "A importância da qualidade de vida na produtividade"
                 ],
-                "Noções de Educação Financeira": [ // (Mantive o nome da categoria como veio no original)
+                "Noções de Educação Financeira": [ 
                     "Organização do orçamento pessoal e familiar",
                     "Estratégias de investimento de curto e longo prazo",
                     "Gestão de dívidas e o impacto no bem-estar",
                     "O planejamento financeiro para a aposentadoria",
                     "A diferença entre poupança e investimento"
                 ],
-                "Inovação, Tecnologia e economia 4.0": [ // (Mantive o nome da categoria como veio no original)
+                "Inovação, Tecnologia e economia 4.0": [ 
                     "O uso de Inteligência Artificial e Machine Learning",
                     "A cultura de inovação e o intraempreendedorismo",
                     "Impacto da automação na força de trabalho",
@@ -154,13 +151,11 @@ io.on('connection', (socket) => {
             tema = gameData.tema;
         }
         
-        // Lógica de turnos do GitHub
         roundData.sorterIndex = (roundData.sorterIndex + 1) % players.length;
         roundData.attemptsLeft = 3;
         io.emit('gameStarted', { categoria, tema });
     });
 
-    // Lógica de "requestNextTipper" do GitHub
     socket.on('requestNextTipper', () => {
         if (currentTips.length < players.length) {
             const nextTipper = players[currentTips.length];
@@ -171,7 +166,6 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Lógica de "sendTip" do GitHub
     socket.on('sendTip', (tipData) => {
         const player = players.find(p => p.id === socket.id);
         if (!player) return;
@@ -188,14 +182,12 @@ io.on('connection', (socket) => {
         }
     });
 
-    // Lógica de "requestSorter" do GitHub
     socket.on('requestSorter', () => {
         const sorter = players[roundData.sorterIndex];
         const shuffledTips = [...currentTips].sort(() => Math.random() - 0.5).map(t => t.tip);
         io.emit('updateSorter', sorter, shuffledTips);
     });
 
-    // Lógica de "checkOrder" e pontuação do GitHub
     socket.on('checkOrder', ({ orderedTips }) => {
         roundData.attemptsLeft--;
         
