@@ -148,45 +148,43 @@ button:hover {
 }
 
 /* === BLOCO CORRIGIDO === */
-/*Removemos o estilo antigo de "#lista-jogadores span" e colocamos este no lugar*/
-
 #lista-jogadores h4 {
-    font-size: 1.3rem;
-    margin-bottom: 10px;
-    color: #ffa500;
+    font-size: 1.3rem;
+    margin-bottom: 10px;
+    color: #ffa500;
 }
 
 .player-item {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 12px 15px;
-    border-radius: 8px;
-    margin-bottom: 8px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    border: 1px solid rgba(255, 165, 0, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 12px 15px;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid rgba(255, 165, 0, 0.5);
 }
 
 .player-rank {
-    font-weight: bold;
-    color: #ffa500;
-    font-size: 1.1rem;
-    flex-basis: 15%;
+    font-weight: bold;
+    color: #ffa500;
+    font-size: 1.1rem;
+    flex-basis: 15%;
 }
 
 .player-name {
-    font-weight: 600;
-    color: #fff;
-    font-size: 1.2rem;
-    flex-basis: 55%;
+    font-weight: 600;
+    color: #fff;
+    font-size: 1.2rem;
+    flex-basis: 55%;
 }
 
 .player-score {
-    font-weight: bold;
-    color: #95ff00; /* Verde limão para destacar */
-    font-size: 1.1rem;
-    flex-basis: 30%;
-    text-align: right;
+    font-weight: bold;
+    color: #95ff00; /* Verde limão para destacar */
+    font-size: 1.1rem;
+    flex-basis: 30%;
+i   text-align: right;
 }
 /* === FIM DO BLOCO CORRIGIDO === */
 
@@ -274,7 +272,7 @@ button:hover {
 @keyframes pulse {
     0% { transform: scale(1); }
     50% { transform: scale(1.1); }
-    100% { transform: scale(1); }
+  t 100% { transform: scale(1); }
 }
 
 #numero-secreto {
@@ -329,13 +327,13 @@ button:hover {
 }
 
 #mensagem-customizada {
-    position: fixed;
+i   position: fixed;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 1000;
     padding: 30px;
-    border-radius: 12px;
+i   border-radius: 12px;
     text-align: center;
     box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
     animation: fade-in 0.5s ease-out;
@@ -362,7 +360,7 @@ button:hover {
 }
 
 .mensagem-erro {
-    background-color: rgba(189, 44, 44, 0.8);
+F   background-color: rgba(189, 44, 44, 0.8);
     border-color: #ff0000;
 }
 
@@ -383,7 +381,7 @@ button:hover {
 }
 
 .comparacao-historico > div {
-    flex: 1;
+i   flex: 1;
     background: rgba(0, 0, 0, 0.4);
     padding: 10px;
     border-radius: 8px;
@@ -397,7 +395,8 @@ button:hover {
 }
 
 .comparacao-historico ul {
-  t-style-type: none;
+    /* ESTA É A CORREÇÃO (O "L" FALTANDO) */
+    list-style-type: none;
     padding: 0;
 }
 
@@ -410,7 +409,7 @@ button:hover {
 }
 
 .lista-comparacao-correta li {
-    color: #95ff00;
+s   color: #95ff00;
 }
 
 .lista-comparacao-jogador li {
