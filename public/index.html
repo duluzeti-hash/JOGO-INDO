@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title> INDO - Pense com Estrategia e Argumente com Logica</title>
     <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="style.css?v=5" />
+    <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -16,13 +16,11 @@
             <h2>Pense com Estrategia e Argumente com Logica</h2>
             <div id="foto-adilson-container">
                 <img id="foto-adilson" src="imagens/foto-adilson.jpg" alt="Foto do Adilson" />
-                <p>Adilson Luzeti - Criador</p>
-            </div>
+                <p>Adilson Luzeti - Criador</p> </div>
         </header>
 
         <section id="cadastro-jogadores">
-            <h3>Cadastro de Jogadores (ate 8)</h3>
-            <input type="text" id="nome-jogador" placeholder="Digite o nome do jogador" maxlength="20" />
+            <h3>Cadastro de Jogadores (ate 8)</h3> <input type="text" id="nome-jogador" placeholder="Digite o nome do jogador" maxlength="20" />
             <button id="btn-add-jogador">Adicionar Jogador</button>
             <button id="btn-reset-jogadores" class="btn-red">Resetar Jogadores</button>
             <button id="btn-iniciar-jogo" class="btn-green hidden">Iniciar Jogo (Sortear Tema)</button>
@@ -32,8 +30,7 @@
         <div id="painel-tema-manual" class="painel-entrada hidden">
             <h3>Definir Tema Manualmente</h3>
             <p>Se preferir nao sortear, preencha os campos abaixo.</p>
-            <label for="categoria-manual">Categoria:</label>
-            <input type="text" id="categoria-manual" placeholder="Ex: Filmes, Animais, etc." autocomplete="off" />
+            <label for="categoria-manual">Categoria:</label> <input type="text" id="categoria-manual" placeholder="Ex: Filmes, Animais, etc." autocomplete="off" />
 
             <label for="tema-manual">Tema:</label>
             <input type="text" id="tema-manual" placeholder="Ex: Star Wars, Leao, etc." autocomplete="off" />
@@ -42,9 +39,7 @@
         </div>
         <section id="jogo" class="hidden">
             <div id="info-rodada">
-                <h3>Rodada <span id="num-rodada">1</span></h3>
-                <p><strong>Categoria:</strong> <span id="categoria-rodada"></span></p>
-                <p><strong>Tema:</strong> <span id="tema-rodada"></span></p>
+                <h3>Rodada <span id="num-rodada">1</span></h3> <p><strong>Categoria:</strong> <span id="categoria-rodada"></span></p> <p><strong>Tema:</strong> <span id="tema-rodada"></span></p>
             </div>
 
             <div id="vez-jogador">
@@ -59,8 +54,7 @@
             </div>
 
             <div id="lista-dicas-container">
-                <h4>Dicas da Rodada (ordenadas pelo numero secreto)</h4>
-                <ul id="lista-dicas"></ul>
+                <h4>Dicas da Rodada (ordenadas pelo numero secreto)</h4> <ul id="lista-dicas"></ul>
             </div>
 
             <section id="ordenacao-dicas" class="hidden">
@@ -68,11 +62,9 @@
                 <p>Arraste as dicas para a ordem que voce acredita ser crescente.</p>
                 <ul id="lista-dicas-ordenar">
                 </ul>
-                <p>Tentativas restantes: <span id="tentativas-restantes">3</span></p>
-                <button id="btn-ordenar" class="btn-green">Tentar Ordenar</button>
+                <p>Tentativas restantes: <span id="tentativas-restantes">3</span></p> <button id="btn-ordenar" class="btn-green">Tentar Ordenar</button>
                 <div id="historico-rodada" class="hidden">
-                    <h4>Histórico da Rodada</h4>
-                    <ul id="lista-historico"></ul>
+                    <h4>Historico da Rodada</h4> <ul id="lista-historico"></ul>
                 </div>
             </section>
 
