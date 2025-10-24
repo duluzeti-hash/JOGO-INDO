@@ -142,11 +142,11 @@ section       } else {
         
         if (player.id === socket.id) {
             currentSecretNumber = Math.floor(Math.random() * 100) + 1;
-id           numeroSecretoDisplay.textContent = currentSecretNumber;
+             numeroSecretoDisplay.textContent = currentSecretNumber;
             numeroSecretoDisplay.classList.remove('hidden');
 
             espacoDicas.classList.remove('hidden');
-s           inputDica.disabled = false;
+            inputDica.disabled = false;
             btnEnviarDica.disabled = false;
             inputDica.value = '';
             inputDica.focus();
@@ -174,12 +174,12 @@ s           inputDica.disabled = false;
             ordenacaoSection.classList.remove('hidden');
             tentativasRestantesSpan.textContent = 3;
             listaDicasOrdenarUl.innerHTML = '';
-            tipsToGuess.forEach((tip) => {
-id               const li = document.createElement('li');
+            tipsToGuess.forEach((tip) => {  
+            const li = document.createElement('li');
                 li.textContent = tip;
                 li.classList.add('sortable-item');
                 listaDicasOrdenarUl.appendChild(li);
-end         });
+            });
             if (sortable) sortable.destroy();
             sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
         } else {
@@ -196,7 +196,7 @@ end         });
         if (socket.id === result.sorterId || result.attemptsLeft === 0) {
             if (result.isCorrect) {
                 showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`, 'success');
-node         } else if (result.attemptsLeft > 0) {
+             } else if (result.attemptsLeft > 0) {
                 showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
             } else {
                 showMessage('FIM DAS TENTATIVAS!', 'Não foi desta vez. Veja a ordem correta abaixo.', 'error');
@@ -204,7 +204,7 @@ node         } else if (result.attemptsLeft > 0) {
         }
         
         tentativasRestantesSpan.textContent = result.attemptsLeft;
-s       
+        
         if (result.isCorrect || result.attemptsLeft === 0) {
             ordenacaoSection.classList.add('hidden');
             historicoRodadaDiv.classList.remove('hidden');
@@ -216,4 +216,5 @@ s       
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
+
 
