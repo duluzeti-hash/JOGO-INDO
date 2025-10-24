@@ -123,7 +123,7 @@ section       } else {
         cadastroSection.classList.add('hidden');
         jogoSection.classList.remove('hidden');
         ordenacaoSection.classList.add('hidden');
-s       historicoRodadaDiv.classList.add('hidden');
+        historicoRodadaDiv.classList.add('hidden');
         btnProximaRodada.classList.add('hidden');
         listaDicasUl.innerHTML = '';
         
@@ -216,3 +216,4 @@ s       
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
+
