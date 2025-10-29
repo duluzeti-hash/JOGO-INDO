@@ -166,9 +166,15 @@ io.on('connection', (socket) => {
         }
     });
 
+    
     socket.on('sendTip', (tipData) => {
         const player = players.find(p => p.id === socket.id);
         if (!player) return;
+
+        // SE FOR A PRIMEIRA DICA DA RODADA, GUARDAMOS QUEM A ENVIOU
+        if (currentTips.length === 0) {
+            roundData.tipperId = player.id; // Anotando o ID do Doador da Rodada
+        }
 
         const newTip = { ...tipData, player: { name: player.name, id: player.id } };
         currentTips.push(newTip);
@@ -181,27 +187,22 @@ io.on('connection', (socket) => {
             io.emit('allTipsReceived', sortedTips);
         }
     });
-
-    // ===== CORREÇÃO APLICADA AQUI =====
+   
     socket.on('requestSorter', () => {
-        // Pega o ID do último jogador que deu uma dica
-        const lastTipperId = currentTips[currentTips.length - 1].player.id;
+        // Criamos uma lista de jogadores que NÃO são o doador da rodada.
+        const eligibleSorters = players.filter(p => p.id !== roundData.tipperId);
 
-        // Cria uma lista de jogadores que NÃO são o último a dar a dica
-        const eligibleSorters = players.filter(p => p.id !== lastTipperId);
-
-        // Escolhe um ordenador aleatoriamente dessa nova lista.
-        // Se a lista estiver vazia (caso de teste com 1 jogador), escolhe o primeiro jogador para evitar erro.
+        // Escolhemos um ordenador aleatório SOMENTE dessa lista de elegíveis.
+        // Adicionado um teste para evitar erro se a lista estiver vazia (caso de 1 jogador).
         const sorter = eligibleSorters.length > 0
             ? eligibleSorters[Math.floor(Math.random() * eligibleSorters.length)]
-            : players[0];
-
+            : players[0]; // Se não houver elegíveis, escolhe o primeiro jogador para não quebrar.
+        
         const shuffledTips = [...currentTips].sort(() => Math.random() - 0.5).map(t => t.tip);
         io.emit('updateSorter', sorter, shuffledTips);
     });
-    // ===== FIM DA CORREÇÃO =====
-
-    socket.on('checkOrder', ({ orderedTips }) => {
+   
+  socket.on('checkOrder', ({ orderedTips }) => {
         roundData.attemptsLeft--;
         
         const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
