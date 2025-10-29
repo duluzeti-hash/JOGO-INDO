@@ -156,7 +156,7 @@ io.on('connection', (socket) => {
         io.emit('gameStarted', { categoria, tema });
     });
 
-    socket.on('requestNextTipper', () => {
+  socket.on('requestNextTipper', () => {
         if (currentTips.length < players.length) {
             const nextTipper = players[currentTips.length];
             io.emit('nextTipper', nextTipper);
@@ -182,11 +182,24 @@ io.on('connection', (socket) => {
         }
     });
 
+    // ===== CORREÇÃO APLICADA AQUI =====
     socket.on('requestSorter', () => {
-        const sorter = players[roundData.sorterIndex];
+        // Pega o ID do último jogador que deu uma dica
+        const lastTipperId = currentTips[currentTips.length - 1].player.id;
+
+        // Cria uma lista de jogadores que NÃO são o último a dar a dica
+        const eligibleSorters = players.filter(p => p.id !== lastTipperId);
+
+        // Escolhe um ordenador aleatoriamente dessa nova lista.
+        // Se a lista estiver vazia (caso de teste com 1 jogador), escolhe o primeiro jogador para evitar erro.
+        const sorter = eligibleSorters.length > 0
+            ? eligibleSorters[Math.floor(Math.random() * eligibleSorters.length)]
+            : players[0];
+
         const shuffledTips = [...currentTips].sort(() => Math.random() - 0.5).map(t => t.tip);
         io.emit('updateSorter', sorter, shuffledTips);
     });
+    // ===== FIM DA CORREÇÃO =====
 
     socket.on('checkOrder', ({ orderedTips }) => {
         roundData.attemptsLeft--;
