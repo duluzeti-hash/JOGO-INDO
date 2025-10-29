@@ -175,27 +175,24 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('requestSorter');
     });
 
-    socket.on('updateSorter', (sorter, tipsToGuess) => {
-        if (sorter && sorter.id === socket.id) {
-            nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
-            ordenacaoSection.classList.remove('hidden');
-            tentativasRestantesSpan.textContent = 3;
-            listaDicasOrdenarUl.innerHTML = '';
-            tipsToGuess.forEach((tip) => {  
-                const li = document.createElement('li');
-                li.textContent = tip;
-                li.classList.add('sortable-item');
-                listaDicasOrdenarUl.appendChild(li);
-            });
-            if (sortable) sortable.destroy();
-            sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
-        } else if (sorter) {
-            nomeJogadorVezSpan.textContent = `Aguardando ${sorter.name} ordenar...`;
-            ordenacaoSection.classList.add('hidden');
-        }
+   socket.on('startSortingPhase', (tipsToGuess) => {
+    // Não existe mais "if (sou eu)". TODOS os jogadores entram nesta fase.
+    nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
+    ordenacaoSection.classList.remove('hidden');
+    tentativasRestantesSpan.textContent = 3; // Cada jogador começa com 3 tentativas
+    listaDicasOrdenarUl.innerHTML = '';
+    
+    tipsToGuess.forEach((tip) => {  
+        const li = document.createElement('li');
+        li.textContent = tip;
+        li.classList.add('sortable-item');
+        listaDicasOrdenarUl.appendChild(li);
     });
     
-    // ===== FUNÇÃO FINAL E CORRIGIDA =====
+    if (sortable) sortable.destroy();
+    sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
+});
+    
     socket.on('orderResult', (result) => {
         // Passo 1: Atualizar a lista de jogadores com a nova pontuação sempre.
         if (result.players) {
@@ -229,3 +226,4 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
+
