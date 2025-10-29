@@ -188,19 +188,13 @@ io.on('connection', (socket) => {
         }
     });
    
-    socket.on('requestSorter', () => {
-        // Criamos uma lista de jogadores que NÃO são o doador da rodada.
-        const eligibleSorters = players.filter(p => p.id !== roundData.tipperId);
-
-        // Escolhemos um ordenador aleatório SOMENTE dessa lista de elegíveis.
-        // Adicionado um teste para evitar erro se a lista estiver vazia (caso de 1 jogador).
-        const sorter = eligibleSorters.length > 0
-            ? eligibleSorters[Math.floor(Math.random() * eligibleSorters.length)]
-            : players[0]; // Se não houver elegíveis, escolhe o primeiro jogador para não quebrar.
-        
-        const shuffledTips = [...currentTips].sort(() => Math.random() - 0.5).map(t => t.tip);
-        io.emit('updateSorter', sorter, shuffledTips);
-    });
+   socket.on('requestSorter', () => {
+    // Agora, em vez de escolher UM ordenador, preparamos as dicas para TODOS.
+    const shuffledTips = [...currentTips].sort(() => Math.random() - 0.5).map(t => t.tip);
+    
+    // E enviamos um novo evento chamado 'startSortingPhase' para TODO MUNDO.
+    io.emit('startSortingPhase', shuffledTips);
+});
    
 socket.on('checkOrder', ({ orderedTips }) => {
     roundData.attemptsLeft--;
@@ -240,4 +234,5 @@ socket.on('checkOrder', ({ orderedTips }) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
 
