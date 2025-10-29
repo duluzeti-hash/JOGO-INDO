@@ -101,12 +101,14 @@ section       } else {
         }
     });
 
-    btnOrdenar.addEventListener('click', () => {
-        if (sortable) {
-            const orderedTips = sortable.toArray();
-            socket.emit('checkOrder', { orderedTips });
-        }
-    });
+   btnOrdenar.addEventListener('click', () => {
+    if (sortable) {
+        // Esta é a linha corrigida:
+        const orderedTips = Array.from(listaDicasOrdenarUl.children).map(li => li.textContent);
+        
+        socket.emit('checkOrder', { orderedTips });
+    }
+});
 
     btnProximaRodada.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
     btnFecharMensagem.addEventListener('click', () => mensagemCustomizada.classList.add('hidden'));
@@ -216,5 +218,6 @@ section       } else {
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
+
 
 
