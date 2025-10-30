@@ -102,13 +102,17 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    btnOrdenar.addEventListener('click', () => {
-        if (sortable) {
-            const orderedTips = Array.from(listaDicasOrdenarUl.children).map(li => li.textContent);
-            socket.emit('checkOrder', { orderedTips });
-        }
-    });
-
+  btnOrdenar.addEventListener('click', () => {
+    console.log('[AUTÓPSIA] O botão FOI CLICADO.');
+    
+    if (sortable) {
+        console.log('[AUTÓPSIA] A variável "sortable" existe. Enviando para o servidor...');
+        const orderedTips = Array.from(listaDicasOrdenarUl.children).map(li => li.textContent);
+        socket.emit('checkOrder', { orderedTips });
+    } else {
+        console.error('[AUTÓPSIA] A variável "sortable" NÃO EXISTE. O clique falhou.');
+    }
+});
     btnProximaRodada.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
 
     btnFecharMensagem.addEventListener('click', () => {
@@ -223,4 +227,5 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 });
+
 
