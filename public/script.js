@@ -195,37 +195,16 @@ document.addEventListener('DOMContentLoaded', () => {
         sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
     });
     
-  socket.on('orderResult', (result) => {
+  socket.on('roundOver', (result) => {
+    mensagemCustomizada.classList.add('hidden');
+    ordenacaoSection.classList.add('hidden');
+    
+    historicoRodadaDiv.classList.remove('hidden');
+    listaHistoricoUl.innerHTML = result.historyHtml;
+    
     updatePlayerList(result.players);
-
-    if (result.isCorrect) {
-        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-        // A tela de ordenação NÃO é mais escondida aqui. O jogador que acertou apenas espera.
-        // Vamos desabilitar o botão para ele não tentar de novo.
-        btnOrdenar.disabled = true;
-    } else if (result.attemptsLeft > 0) {
-        tentativasRestantesSpan.textContent = result.attemptsLeft;
-        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-    } else {
-        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-        // A tela de ordenação NÃO é mais escondida aqui.
-        // Apenas desabilitamos o botão para quem zerou as tentativas.
-        btnOrdenar.disabled = true;
-    }
+    
+    btnProximaRodada.classList.remove('hidden');
+    btnResetJogadores.classList.remove('hidden'); 
 });
-
-    socket.on('roundOver', (result) => {
-        mensagemCustomizada.classList.add('hidden');
-        ordenacaoSection.classList.add('hidden');
-        
-        historicoRodadaDiv.classList.remove('hidden');
-        listaHistoricoUl.innerHTML = result.historyHtml;
-        
-        btnProximaRodada.classList.remove('hidden');
-        btnResetJogadores.classList.remove('hidden'); 
-    });
-
-    socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
-});
-
 
