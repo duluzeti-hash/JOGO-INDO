@@ -44,8 +44,8 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
-        mensagemCustomizada.className = ''; // Limpa classes anteriores
-        mensagemCustomizada.classList.add('mensagem-customizada'); // Adiciona a classe base
+        mensagemCustomizada.className = '';
+        mensagemCustomizada.classList.add('mensagem-customizada');
         if (type === 'success') {
             mensagemCustomizada.classList.add('mensagem-sucesso');
         } else if (type === 'error') {
@@ -133,6 +133,7 @@ document.addEventListener('DOMContentLoaded', () => {
         ordenacaoSection.classList.add('hidden');
         historicoRodadaDiv.classList.add('hidden');
         btnProximaRodada.classList.add('hidden');
+        btnResetJogadores.classList.add('hidden');
         listaDicasUl.innerHTML = '';
         
         const currentRound = parseInt(numRodadaSpan.textContent || 0) + 1;
@@ -175,59 +176,56 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('requestSorter');
     });
 
-   socket.on('startSortingPhase', (tipsToGuess) => {
-    // Não existe mais "if (sou eu)". TODOS os jogadores entram nesta fase.
-    nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
-    ordenacaoSection.classList.remove('hidden');
-    tentativasRestantesSpan.textContent = 3; // Cada jogador começa com 3 tentativas
-    listaDicasOrdenarUl.innerHTML = '';
-    
-    tipsToGuess.forEach((tip) => {  
-        const li = document.createElement('li');
-        li.textContent = tip;
-        li.classList.add('sortable-item');
-        listaDicasOrdenarUl.appendChild(li);
+    socket.on('startSortingPhase', (tipsToGuess) => {
+        nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
+        ordenacaoSection.classList.remove('hidden');
+        tentativasRestantesSpan.textContent = 3;
+        listaDicasOrdenarUl.innerHTML = '';
+        
+        tipsToGuess.forEach((tip) => {  
+            const li = document.createElement('li');
+            li.textContent = tip;
+            li.classList.add('sortable-item');
+            listaDicasOrdenarUl.appendChild(li);
+        });
+        
+        if (sortable) {
+            sortable.destroy();
+        }
+        sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
     });
     
-    if (sortable) sortable.destroy();
-    sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
-});
-    
-   socket.on('orderResult', (result) => {
-    // Atualiza o placar para todos verem a pontuação em tempo real
-    updatePlayerList(result.players); 
+    socket.on('orderResult', (result) => {
+        updatePlayerList(result.players); 
 
-    if (result.isCorrect) {
-        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-        ordenacaoSection.classList.add('hidden'); // Esconde a sua tela de ordenação, pois você já acertou
-    } else if (result.attemptsLeft > 0) {
-        tentativasRestantesSpan.textContent = result.attemptsLeft;
-        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-    } else {
-        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-        ordenacaoSection.classList.add('hidden'); // Esconde sua tela, pois suas tentativas acabaram
-    }
-});
+        // SE EU ACERTEI, o servidor me manda a mensagem e eu escondo MINHA tela para esperar os outros
+        if (result.isCorrect) {
+            showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
+            ordenacaoSection.classList.add('hidden');
+        } 
+        // SE EU ERREI, mas ainda tenho chances
+        else if (result.attemptsLeft > 0) {
+            tentativasRestantesSpan.textContent = result.attemptsLeft;
+            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+        } 
+        // SE EU ERREI e minhas chances acabaram
+        else {
+            showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
+            ordenacaoSection.classList.add('hidden');
+        }
+    });
 
-// Função 2 (NOVA): Lida com o FIM DA RODADA para todo mundo
-socket.on('roundOver', (result) => {
-    // Garante que qualquer pop-up ("Quase lá!") seja fechado
-    mensagemCustomizada.classList.add('hidden');
-    
-    // Esconde a área de ordenação de vez para todos
-    ordenacaoSection.classList.add('hidden');
-    
-    // FINALMENTE, MOSTRA O HISTÓRICO DA RODADA
-    historicoRodadaDiv.classList.remove('hidden');
-    listaHistoricoUl.innerHTML = result.historyHtml;
-    
-    // E mostra os botões de controle final
-    btnProximaRodada.classList.remove('hidden');
-    btnResetJogadores.classList.remove('hidden'); 
-});
+    socket.on('roundOver', (result) => {
+        mensagemCustomizada.classList.add('hidden');
+        ordenacaoSection.classList.add('hidden');
+        
+        historicoRodadaDiv.classList.remove('hidden');
+        listaHistoricoUl.innerHTML = result.historyHtml;
+        
+        btnProximaRodada.classList.remove('hidden');
+        btnResetJogadores.classList.remove('hidden'); 
+    });
 
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
-
-
