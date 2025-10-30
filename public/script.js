@@ -1,5 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const socket = io();
+    const socket = io({ transports: ['websocket', 'polling'] });
 
     const cadastroSection = document.getElementById('cadastro-jogadores');
     const jogoSection = document.getElementById('jogo');
@@ -220,3 +220,4 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
+
