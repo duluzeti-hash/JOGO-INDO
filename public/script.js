@@ -196,13 +196,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
         if (result.isCorrect) {
             showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-            // A tela de ordenação NÃO é mais escondida aqui.
+            ordenacaoSection.classList.add('hidden');
         } else if (result.attemptsLeft > 0) {
             tentativasRestantesSpan.textContent = result.attemptsLeft;
             showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
         } else {
             showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-            // A tela de ordenação NÃO é mais escondida aqui.
+            ordenacaoSection.classList.add('hidden');
         }
     });
 
@@ -218,6 +218,4 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
-
 });
-
