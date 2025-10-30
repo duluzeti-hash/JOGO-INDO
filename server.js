@@ -7,7 +7,7 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: "*",
+    origin: "https://jogo-indo.fly.dev",
     methods: ["GET", "POST"]
   }
 });
@@ -260,6 +260,7 @@ socket.on('checkOrder', ({ orderedTips }) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
 
 
 
