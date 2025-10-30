@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', () => {
     const socket = io();
 
-    // Referências aos Elementos do DOM
     const cadastroSection = document.getElementById('cadastro-jogadores');
     const jogoSection = document.getElementById('jogo');
     const nomeJogadorInput = document.getElementById('nome-jogador');
@@ -27,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const listaDicasOrdenarUl = document.getElementById('lista-dicas-ordenar');
     const tentativasRestantesSpan = document.getElementById('tentativas-restantes');
     const btnOrdenar = document.getElementById('btn-ordenar');
-    console.log('[BIÓPSIA DO BOTÃO] A variável btnOrdenar é:', btnOrdenar);
     const historicoRodadaDiv = document.getElementById('historico-rodada');
     const listaHistoricoUl = document.getElementById('lista-historico');
     const btnProximaRodada = document.getElementById('btn-proxima-rodada');
@@ -41,7 +39,6 @@ document.addEventListener('DOMContentLoaded', () => {
     let currentSecretNumber = 0;
     let sortable;
 
-    // Funções Auxiliares
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
@@ -69,7 +66,6 @@ document.addEventListener('DOMContentLoaded', () => {
         painelTemaManual.classList.toggle('hidden', !canStart);
     }
 
-    // Event Listeners dos Botões
     btnAddJogador.addEventListener('click', () => {
         const name = nomeJogadorInput.value.trim();
         if (name) {
@@ -119,7 +115,6 @@ document.addEventListener('DOMContentLoaded', () => {
         mensagemCustomizada.classList.add('hidden');
     });
 
-    // Listeners do Socket.IO
     socket.on('connect', () => console.log('[CLIENTE] Conectado ao servidor com sucesso!'));
     socket.on('resetGame', () => window.location.reload());
     socket.on('updatePlayers', updatePlayerList);
@@ -199,20 +194,15 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('orderResult', (result) => {
         updatePlayerList(result.players); 
 
-        // SE EU ACERTEI, o servidor me manda a mensagem e eu escondo MINHA tela para esperar os outros
         if (result.isCorrect) {
             showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-            ordenacaoSection.classList.add('hidden');
-        } 
-        // SE EU ERREI, mas ainda tenho chances
-        else if (result.attemptsLeft > 0) {
+            // A tela de ordenação NÃO é mais escondida aqui.
+        } else if (result.attemptsLeft > 0) {
             tentativasRestantesSpan.textContent = result.attemptsLeft;
             showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-        } 
-        // SE EU ERREI e minhas chances acabaram
-        else {
+        } else {
             showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-            ordenacaoSection.classList.add('hidden');
+            // A tela de ordenação NÃO é mais escondida aqui.
         }
     });
 
@@ -230,4 +220,3 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
-
