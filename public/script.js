@@ -193,37 +193,41 @@ document.addEventListener('DOMContentLoaded', () => {
     sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
 });
     
-    socket.on('orderResult', (result) => {
-        // Passo 1: Atualizar a lista de jogadores com a nova pontuação sempre.
-        if (result.players) {
-            updatePlayerList(result.players);
-        }
+   socket.on('orderResult', (result) => {
+    // Atualiza o placar para todos verem a pontuação em tempo real
+    updatePlayerList(result.players); 
 
-        const isRoundOver = result.isCorrect || result.attemptsLeft === 0;
+    if (result.isCorrect) {
+        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
+        ordenacaoSection.classList.add('hidden'); // Esconde a sua tela de ordenação, pois você já acertou
+    } else if (result.attemptsLeft > 0) {
+        tentativasRestantesSpan.textContent = result.attemptsLeft;
+        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+    } else {
+        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
+        ordenacaoSection.classList.add('hidden'); // Esconde sua tela, pois suas tentativas acabaram
+    }
+});
 
-        // Passo 2: Verificar se a rodada ACABOU.
-        if (isRoundOver) {
-            // Se a rodada acabou, esconde a ordenação e mostra o histórico final.
-            ordenacaoSection.classList.add('hidden');
-            historicoRodadaDiv.classList.remove('hidden');
-            listaHistoricoUl.innerHTML = result.historyHtml;
-            btnProximaRodada.classList.remove('hidden');
-
-            // Mostra uma mensagem de "Parabéns" ou "Fim de Jogo" que o jogador pode fechar.
-            if (result.isCorrect) {
-                showMessage('PARABÉNS!', `Você acertou a ordem e ganhou ${result.points} pontos!`, 'success');
-            } else {
-                showMessage('FIM DAS TENTATIVAS!', 'Não foi desta vez. Veja a ordem correta.', 'error');
-            }
-        } else {
-            // Passo 3: Se a rodada NÃO acabou, apenas mostra a mensagem de erro e atualiza as tentativas.
-            tentativasRestantesSpan.textContent = result.attemptsLeft;
-            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-        }
-    });
-    // ===== FIM DA CORREÇÃO =====
+// Função 2 (NOVA): Lida com o FIM DA RODADA para todo mundo
+socket.on('roundOver', (result) => {
+    // Garante que qualquer pop-up ("Quase lá!") seja fechado
+    mensagemCustomizada.classList.add('hidden');
+    
+    // Esconde a área de ordenação de vez para todos
+    ordenacaoSection.classList.add('hidden');
+    
+    // FINALMENTE, MOSTRA O HISTÓRICO DA RODADA
+    historicoRodadaDiv.classList.remove('hidden');
+    listaHistoricoUl.innerHTML = result.historyHtml;
+    
+    // E mostra os botões de controle final
+    btnProximaRodada.classList.remove('hidden');
+    btnResetJogadores.classList.remove('hidden'); 
+});
 
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
+
 
