@@ -27,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const listaDicasOrdenarUl = document.getElementById('lista-dicas-ordenar');
     const tentativasRestantesSpan = document.getElementById('tentativas-restantes');
     const btnOrdenar = document.getElementById('btn-ordenar');
+    console.log('[BIÓPSIA DO BOTÃO] A variável btnOrdenar é:', btnOrdenar);
     const historicoRodadaDiv = document.getElementById('historico-rodada');
     const listaHistoricoUl = document.getElementById('lista-historico');
     const btnProximaRodada = document.getElementById('btn-proxima-rodada');
@@ -229,3 +230,4 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 
 });
+
