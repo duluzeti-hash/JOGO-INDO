@@ -18,7 +18,14 @@ const PORT = process.env.PORT || 3000;
 
 let players = [];
 let currentTips = [];
-let roundData = { sorterIndex: -1 }; 
+let roundData = {}; // Este é o nosso "baú" para a rodada
+
+const initialRoundData = {
+    tipperId: null,
+    sorterId: null,
+    playerAttempts: {},
+    playersWhoFinished: {}
+};
 
 io.on('connection', (socket) => {
     console.log('[SERVIDOR] Novo jogador conectado:', socket.id);
@@ -197,28 +204,47 @@ io.on('connection', (socket) => {
 });
    
 socket.on('checkOrder', ({ orderedTips }) => {
-    roundData.attemptsLeft--;
-    
-    const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
-
-    console.log('[PROVA DO CRIME] O servidor está comparando:', { 'Enviado Pelo Jogador': orderedTips, 'Ordem Correta no Servidor': correctOrder });
-    
-    let isCorrect = orderedTips.length === correctOrder.length && orderedTips.every((value, index) => value === correctOrder[index]);
-    
-    const historyHtml = [...currentTips].sort((a,b) => a.number - b.number).map(t => `<li><b>${t.number}</b> - ${t.tip} <i>(${t.player.name})</i></li>`).join('');
-    const points = isCorrect ? (roundData.attemptsLeft + 1) * 10 : 0;
-    
-    const sorterPlayer = players.find(p => p.id === socket.id);
-    if (isCorrect && sorterPlayer) {
-        sorterPlayer.score += points;
+    const player = players.find(p => p.id === socket.id);
+    if (!player || roundData.playersWhoFinished[player.id]) {
+        return; // Ignora se o jogador não existe ou já terminou suas tentativas
     }
-    
+
+    // Gerencia as tentativas INDIVIDUALMENTE
+    if (roundData.playerAttempts[player.id] === undefined) {
+        roundData.playerAttempts[player.id] = 3;
+    }
+    roundData.playerAttempts[player.id]--;
+    const attemptsLeft = roundData.playerAttempts[player.id];
+
+    const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
+    const isCorrect = orderedTips.length === correctOrder.length && orderedTips.every((value, index) => value === correctOrder[index]);
+
+    let points = 0;
+    if (isCorrect) {
+        // Lógica de pontuação baseada na tentativa
+        if (attemptsLeft === 2) points = 30; // Acertou na 1ª tentativa
+        if (attemptsLeft === 1) points = 20; // Acertou na 2ª
+        if (attemptsLeft === 0) points = 10; // Acertou na 3ª
+        player.score += points;
+        roundData.playersWhoFinished[player.id] = true; // Marca que este jogador acertou
+    }
+
+    // Marca que o jogador terminou se acabaram as tentativas
+    if (attemptsLeft === 0) {
+        roundData.playersWhoFinished[player.id] = true;
+    }
+
     const rankedPlayers = [...players].sort((a, b) => b.score - a.score);
 
-    if (isCorrect || roundData.attemptsLeft === 0) {
-        io.emit('orderResult', { isCorrect, points, attemptsLeft: 0, historyHtml, players: rankedPlayers, sorterId: socket.id });
-    } else {
-        socket.emit('orderResult', { isCorrect: false, attemptsLeft: roundData.attemptsLeft, players: rankedPlayers, sorterId: socket.id });
+    // Envia um resultado PARCIAL apenas para o jogador que tentou
+    socket.emit('orderResult', { isCorrect, points, attemptsLeft, players: rankedPlayers });
+
+    // VERIFICA SE TODOS OS JOGADORES TERMINARAM
+    const activePlayers = players.length;
+    if (Object.keys(roundData.playersWhoFinished).length === activePlayers) {
+        // SE SIM, ENVIA O RESULTADO FINAL PARA TODO MUNDO
+        const historyHtml = [...currentTips].sort((a,b) => a.number - b.number).map(t => `<li><b>${t.number}</b> - ${t.tip} <i>(${t.player.name})</i></li>`).join('');
+        io.emit('roundOver', { historyHtml, players: rankedPlayers });
     }
 });
 
@@ -234,5 +260,6 @@ socket.on('checkOrder', ({ orderedTips }) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
 
 
