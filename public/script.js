@@ -90,13 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnEnviarDica.addEventListener('click', () => {
-        const tip = inputDica.value.trim();
-        if (tip) {
-            socket.emit('sendTip', { tip, number: Math.floor(Math.random() * 100) + 1 });
-            inputDica.disabled = true;
-            btnEnviarDica.disabled = true;
-        }
-    });
+    const tip = inputDica.value.trim();
+    if (tip) {
+        socket.emit('sendTip', { tip, number: currentSecretNumber });
+        inputDica.disabled = true;
+        btnEnviarDica.disabled = true;
+    }
+});
 
     btnOrdenar.addEventListener('click', () => {
         if (sortable) {
@@ -185,4 +185,5 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResetJogadores.classList.remove('hidden'); 
     });
 });
+
 
