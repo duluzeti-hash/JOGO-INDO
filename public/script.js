@@ -35,8 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnFecharMensagem = document.getElementById('btn-fechar-mensagem');
     const musica = document.getElementById('musica');
     
-    let players = [];
-    let currentSecretNumber = 0;
     let sortable;
 
     function showMessage(title, text, type = 'info') {
@@ -53,15 +51,14 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function updatePlayerList(playerList) {
-        players = playerList;
         listaJogadoresDiv.innerHTML = '<h4>Jogadores (Ranking):</h4>';
-        players.forEach((player, index) => {
+        playerList.forEach((player, index) => {
             const playerDiv = document.createElement('div');
             playerDiv.classList.add('player-item');
             playerDiv.innerHTML = `<span class="player-rank">${index + 1}º</span> <span class="player-name">${player.name}</span> <span class="player-score">${player.score} pts</span>`;
             listaJogadoresDiv.appendChild(playerDiv);
         });
-        const canStart = players.length >= 2;
+        const canStart = playerList.length >= 2;
         btnIniciarJogo.classList.toggle('hidden', !canStart);
         painelTemaManual.classList.toggle('hidden', !canStart);
     }
@@ -95,39 +92,30 @@ document.addEventListener('DOMContentLoaded', () => {
     btnEnviarDica.addEventListener('click', () => {
         const tip = inputDica.value.trim();
         if (tip) {
-            const tipData = { tip, number: currentSecretNumber };
-            socket.emit('sendTip', tipData);
+            socket.emit('sendTip', { tip, number: Math.floor(Math.random() * 100) + 1 });
             inputDica.disabled = true;
             btnEnviarDica.disabled = true;
         }
     });
 
-  btnOrdenar.addEventListener('click', () => {
-    console.log('[AUTÓPSIA] O botão FOI CLICADO.');
-    
-    if (sortable) {
-        console.log('[AUTÓPSIA] A variável "sortable" existe. Enviando para o servidor...');
-        const orderedTips = Array.from(listaDicasOrdenarUl.children).map(li => li.textContent);
-        socket.emit('checkOrder', { orderedTips });
-    } else {
-        console.error('[AUTÓPSIA] A variável "sortable" NÃO EXISTE. O clique falhou.');
-    }
-});
+    btnOrdenar.addEventListener('click', () => {
+        if (sortable) {
+            const orderedTips = Array.from(listaDicasOrdenarUl.children).map(li => li.textContent);
+            socket.emit('checkOrder', { orderedTips });
+        }
+    });
+
     btnProximaRodada.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
 
     btnFecharMensagem.addEventListener('click', () => {
         mensagemCustomizada.classList.add('hidden');
     });
 
-    socket.on('connect', () => console.log('[CLIENTE] Conectado ao servidor com sucesso!'));
-    socket.on('resetGame', () => window.location.reload());
     socket.on('updatePlayers', updatePlayerList);
+    socket.on('resetGame', () => window.location.reload());
 
     socket.on('gameStarted', (gameInfo) => {
-        if (musica.paused) {
-            musica.play().catch(e => console.log("A reprodução automática foi bloqueada."));
-        }
-        
+        if (musica.paused) musica.play().catch(e => {});
         cadastroSection.classList.add('hidden');
         jogoSection.classList.remove('hidden');
         ordenacaoSection.classList.add('hidden');
@@ -135,76 +123,58 @@ document.addEventListener('DOMContentLoaded', () => {
         btnProximaRodada.classList.add('hidden');
         btnResetJogadores.classList.add('hidden');
         listaDicasUl.innerHTML = '';
-        
-        const currentRound = parseInt(numRodadaSpan.textContent || 0) + 1;
-        numRodadaSpan.textContent = currentRound;
-        
+        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
         categoriaRodadaSpan.textContent = gameInfo.categoria;
         temaRodadaSpan.textContent = gameInfo.tema;
-        
         socket.emit('requestNextTipper');
     });
     
     socket.on('nextTipper', (player) => {
         nomeJogadorVezSpan.textContent = player.name;
         nomeJogadorDicaSpan.textContent = player.name;
-        
-        if (player.id === socket.id) {
-            currentSecretNumber = Math.floor(Math.random() * 100) + 1;
-            numeroSecretoDisplay.textContent = currentSecretNumber;
-            numeroSecretoDisplay.classList.remove('hidden');
-            espacoDicas.classList.remove('hidden');
+        const isMyTurn = player.id === socket.id;
+        espacoDicas.classList.toggle('hidden', !isMyTurn);
+        numeroSecretoDisplay.classList.toggle('hidden', !isMyTurn);
+        if (isMyTurn) {
             inputDica.disabled = false;
             btnEnviarDica.disabled = false;
             inputDica.value = '';
             inputDica.focus();
-        } else {
-            espacoDicas.classList.add('hidden');
-            numeroSecretoDisplay.classList.add('hidden');
         }
-    });
-
-    socket.on('allTipsReceived', (tips) => {
-        espacoDicas.classList.add('hidden');
-        numeroSecretoDisplay.classList.add('hidden');
-        listaDicasUl.innerHTML = '<h4>Dicas Enviadas:</h4>';
-        tips.forEach(tip => {
-            const li = document.createElement('li');
-            li.textContent = tip.tip;
-            listaDicasUl.appendChild(li);
-        });
-        socket.emit('requestSorter');
     });
 
     socket.on('startSortingPhase', (tipsToGuess) => {
         nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
         ordenacaoSection.classList.remove('hidden');
-        tentativasRestantesSpan.textContent = 3;
+        btnOrdenar.disabled = false;
         listaDicasOrdenarUl.innerHTML = '';
-        
         tipsToGuess.forEach((tip) => {  
             const li = document.createElement('li');
             li.textContent = tip;
             li.classList.add('sortable-item');
             listaDicasOrdenarUl.appendChild(li);
         });
-        
-        if (sortable) {
-            sortable.destroy();
-        }
+        if (sortable) sortable.destroy();
         sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
     });
     
-  socket.on('roundOver', (result) => {
-    mensagemCustomizada.classList.add('hidden');
-    ordenacaoSection.classList.add('hidden');
-    
-    historicoRodadaDiv.classList.remove('hidden');
-    listaHistoricoUl.innerHTML = result.historyHtml;
-    
-    updatePlayerList(result.players);
-    
-    btnProximaRodada.classList.remove('hidden');
-    btnResetJogadores.classList.remove('hidden'); 
-});
+    socket.on('orderResult', (result) => {
+        updatePlayerList(result.players);
+        btnOrdenar.disabled = true;
+        if (result.isCorrect) {
+            showMessage('PARABÉNS!', `Você acertou a ordem! Aguardando os outros jogadores...`, 'success');
+        } else {
+            showMessage('ERROU!', `Você errou a ordem. Aguardando os outros jogadores...`, 'error');
+        }
+    });
 
+    socket.on('roundOver', (result) => {
+        mensagemCustomizada.classList.add('hidden');
+        ordenacaoSection.classList.add('hidden');
+        historicoRodadaDiv.classList.remove('hidden');
+        listaHistoricoUl.innerHTML = result.historyHtml;
+        updatePlayerList(result.players);
+        btnProximaRodada.classList.remove('hidden');
+        btnResetJogadores.classList.remove('hidden'); 
+    });
+});
