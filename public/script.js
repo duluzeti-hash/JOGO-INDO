@@ -129,19 +129,26 @@ document.addEventListener('DOMContentLoaded', () => {
         socket.emit('requestNextTipper');
     });
     
-    socket.on('nextTipper', (player) => {
-        nomeJogadorVezSpan.textContent = player.name;
-        nomeJogadorDicaSpan.textContent = player.name;
-        const isMyTurn = player.id === socket.id;
-        espacoDicas.classList.toggle('hidden', !isMyTurn);
-        numeroSecretoDisplay.classList.toggle('hidden', !isMyTurn);
-        if (isMyTurn) {
-            inputDica.disabled = false;
-            btnEnviarDica.disabled = false;
-            inputDica.value = '';
-            inputDica.focus();
-        }
-    });
+ socket.on('nextTipper', (player) => {
+    nomeJogadorVezSpan.textContent = player.name;
+    nomeJogadorDicaSpan.textContent = player.name;
+    const isMyTurn = player.id === socket.id;
+
+    espacoDicas.classList.toggle('hidden', !isMyTurn);
+    
+    if (isMyTurn) {
+        currentSecretNumber = Math.floor(Math.random() * 100) + 1;
+        numeroSecretoDisplay.textContent = currentSecretNumber;
+        numeroSecretoDisplay.classList.remove('hidden');
+        
+        inputDica.disabled = false;
+        btnEnviarDica.disabled = false;
+        inputDica.value = '';
+        inputDica.focus();
+    } else {
+        numeroSecretoDisplay.classList.add('hidden');
+    }
+});
 
     socket.on('startSortingPhase', (tipsToGuess) => {
         nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
@@ -178,3 +185,4 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResetJogadores.classList.remove('hidden'); 
     });
 });
+
