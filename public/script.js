@@ -191,20 +191,24 @@ document.addEventListener('DOMContentLoaded', () => {
         sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
     });
     
-    socket.on('orderResult', (result) => {
-        updatePlayerList(result.players); 
+  socket.on('orderResult', (result) => {
+    updatePlayerList(result.players);
 
-        if (result.isCorrect) {
-            showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-            ordenacaoSection.classList.add('hidden');
-        } else if (result.attemptsLeft > 0) {
-            tentativasRestantesSpan.textContent = result.attemptsLeft;
-            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-        } else {
-            showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-            ordenacaoSection.classList.add('hidden');
-        }
-    });
+    if (result.isCorrect) {
+        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
+        // A tela de ordenação NÃO é mais escondida aqui. O jogador que acertou apenas espera.
+        // Vamos desabilitar o botão para ele não tentar de novo.
+        btnOrdenar.disabled = true;
+    } else if (result.attemptsLeft > 0) {
+        tentativasRestantesSpan.textContent = result.attemptsLeft;
+        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+    } else {
+        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
+        // A tela de ordenação NÃO é mais escondida aqui.
+        // Apenas desabilitamos o botão para quem zerou as tentativas.
+        btnOrdenar.disabled = true;
+    }
+});
 
     socket.on('roundOver', (result) => {
         mensagemCustomizada.classList.add('hidden');
@@ -219,3 +223,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
     socket.on('message', (msg) => showMessage(msg.title, msg.text, msg.type));
 });
+
