@@ -20,11 +20,35 @@ let currentTips = [];
 let roundData = {};
 
 const temas = [
-    { categoria: "CUSTOS OPERACIONAIS", tema: "O impacto da manutenção preventiva e corretiva" },
-    { categoria: "GESTÃO DE FROTAS", tema: "Tecnologias de rastreamento e monitoramento" },
-    { categoria: "LOGÍSTICA REVERSA", tema: "Desafios e oportunidades no retorno de embalagens" },
-    { categoria: "LEGISLAÇÃO DO SETOR", tema: "Normas sobre o tempo de direção e descanso do motorista" },
-    { categoria: "SEGURANÇA NO TRANSPORTE", tema: "Medidas para prevenção de roubo de cargas" }
+    // CUSTOS E FINANÇAS
+    { categoria: "CUSTOS OPERACIONAIS", tema: "O impacto da flutuação do preço do diesel na planilha de frete" },
+    { categoria: "CUSTOS OPERACIONAIS", tema: "Manutenção preventiva vs. corretiva: qual reduz mais os gastos?" },
+    { categoria: "CUSTOS OPERACIONAIS", tema: "Custo real de pedágios em rotas de longa distância no Brasil" },
+    { categoria: "GESTÃO FINANCEIRA", tema: "Como calcular o ponto de equilíbrio de um veículo de carga" },
+    { categoria: "TRIBUTAÇÃO", tema: "Impacto de impostos como ICMS e IPI no valor final do frete" },
+
+    // GESTÃO DE PESSOAS
+    { categoria: "GESTÃO DE PESSOAS", tema: "Estratégias para reduzir o turnover (rotatividade) de motoristas" },
+    { categoria: "GESTÃO DE PESSOAS", tema: "A importância do treinamento e capacitação contínua para a equipe" },
+    { categoria: "LEGISLAÇÃO TRABALHISTA", tema: "Lei do Descanso: como cumprir a jornada de trabalho do motorista sem perder produtividade" },
+
+    // TECNOLOGIA E INOVAÇÃO
+    { categoria: "TECNOLOGIA", tema: "O papel da Telemetria na redução de custos e aumento da segurança" },
+    { categoria: "TECNOLOGIA", tema: "Benefícios da roteirização inteligente para otimização de entregas" },
+    { categoria: "INOVAÇÃO", tema: "O futuro dos caminhões autônomos e o impacto no mercado de trabalho" },
+
+    // LEGISLAÇÃO E SEGURANÇA
+    { categoria: "LEGISLAÇÃO", tema: "Principais exigências da ANTT para o transporte de cargas" },
+    { categoria: "SEGURANÇA", tema: "Tecnologias e estratégias eficazes para a prevenção de roubo de cargas" },
+    { categoria: "SEGURANÇA", tema: "A relação entre a fadiga do motorista e o risco de acidentes" },
+    { categoria: "SEGURANÇA", tema: "Regras para o transporte de cargas perigosas (produtos químicos, inflamáveis)" },
+
+    // LOGÍSTICA E ESTRATÉGIA
+    { categoria: "LOGÍSTICA VERDE", tema: "Práticas de ESG (Ambiental, Social e Governança) no setor de transportes" },
+    { categoria: "LOGÍSTICA REVERSA", tema: "Os desafios de coletar e transportar produtos pós-consumo" },
+    { categoria: "INFRAESTRUTURA", tema: "O impacto da má condição das estradas brasileiras na operação logística" },
+    { categoria: "ESTRATÉGIA", tema: "Vantagens e desvantagens da terceirização de frota" },
+    { categoria: "ESTRATÉGIA", tema: "Como a logística 'last mile' (última milha) impacta a satisfação do cliente" }
 ];
 
 function resetRoundState() {
@@ -118,3 +142,4 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
