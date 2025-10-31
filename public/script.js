@@ -168,29 +168,43 @@ document.addEventListener('DOMContentLoaded', () => {
     });
     
     socket.on('orderResult', (result) => {
-        updatePlayerList(result.players);
-        tentativasRestantesSpan.textContent = result.attemptsLeft;
+    updatePlayerList(result.players);
+    tentativasRestantesSpan.textContent = result.attemptsLeft;
 
-        if (result.isCorrect) {
-            showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-            btnOrdenar.disabled = true;
-        } else if (result.attemptsLeft > 0) {
-            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+    if (result.isCorrect) {
+        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
+        btnOrdenar.disabled = true;
+    } else if (result.attemptsLeft > 0) {
+        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+    } else {
+        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
+        btnOrdenar.disabled = true;
+    }
+});
+
+// Esta função lida com o FIM DA RODADA para todo mundo
+socket.on('roundOver', (result) => {
+    // Pega os dados do último jogador que finalizou a rodada
+    const lastPlayer = result.lastPlayerResult;
+    
+    // Se EU sou o último jogador, mostra a MINHA mensagem final de acerto ou erro
+    if (lastPlayer && lastPlayer.id === socket.id) {
+        if (lastPlayer.isCorrect) {
+            showMessage('PARABÉNS!', `Você acertou e ganhou ${lastPlayer.points} pontos!`, 'success');
         } else {
-            showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-            btnOrdenar.disabled = true;
+            showMessage('FIM DAS TENTATIVAS!', 'Você não acertou.', 'error');
         }
-    });
-
-    socket.on('roundOver', (result) => {
+    }
+    
+    // Espera 2 segundos para dar tempo do último jogador ler sua mensagem
+    setTimeout(() => {
+        // E então, mostra o histórico final para TODO MUNDO
         mensagemCustomizada.classList.add('hidden');
         ordenacaoSection.classList.add('hidden');
-        
         historicoRodadaDiv.classList.remove('hidden');
         listaHistoricoUl.innerHTML = result.historyHtml;
         updatePlayerList(result.players);
-        
         btnProximaRodada.classList.remove('hidden');
         btnResetJogadores.classList.remove('hidden'); 
-    });
+    }, 2000); // Atraso de 2 segundos
 });
