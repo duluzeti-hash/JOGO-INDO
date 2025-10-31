@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const socket = io({ transports: ['websocket', 'polling'] });
 
+    // Referências do DOM
     const cadastroSection = document.getElementById('cadastro-jogadores');
     const jogoSection = document.getElementById('jogo');
     const nomeJogadorInput = document.getElementById('nome-jogador');
@@ -37,12 +38,18 @@ document.addEventListener('DOMContentLoaded', () => {
     
     let currentSecretNumber = 0;
     let sortable;
+    let lastRoundResult = null; // Variável para guardar o resultado final
 
+    // Função showMessage CORRIGIDA para bater com o CSS
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
-        mensagemCustomizada.classList.remove('mensagem-sucesso', 'mensagem-erro');
-        mensagemCustomizada.classList.add(`mensagem-${type}`);
+        mensagemCustomizada.classList.remove('mensagem-success', 'mensagem-error');
+        if (type === 'success') {
+            mensagemCustomizada.classList.add('mensagem-success');
+        } else if (type === 'error') {
+            mensagemCustomizada.classList.add('mensagem-error');
+        }
         mensagemCustomizada.classList.remove('hidden');
     }
 
@@ -59,6 +66,18 @@ document.addEventListener('DOMContentLoaded', () => {
         painelTemaManual.classList.toggle('hidden', !canStart);
     }
 
+    // NOVA Função para mostrar o histórico
+    function mostrarHistorico(result) {
+        mensagemCustomizada.classList.add('hidden');
+        ordenacaoSection.classList.add('hidden');
+        historicoRodadaDiv.classList.remove('hidden');
+        listaHistoricoUl.innerHTML = result.historyHtml;
+        updatePlayerList(result.players);
+        btnProximaRodada.classList.remove('hidden');
+        btnResetJogadores.classList.remove('hidden'); 
+    }
+
+    // Botões
     btnAddJogador.addEventListener('click', () => {
         const name = nomeJogadorInput.value.trim();
         if (name) socket.emit('addPlayer', { name });
@@ -95,8 +114,18 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnProximaRodada.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
-    btnFecharMensagem.addEventListener('click', () => mensagemCustomizada.classList.add('hidden'));
+    
+    // Botão "OK" do Popup AGORA CONTROLA O HISTÓRICO
+    btnFecharMensagem.addEventListener('click', () => {
+        mensagemCustomizada.classList.add('hidden');
+        // Se a gente fechou o popup e tinha um resultado final guardado, mostra o histórico
+        if (lastRoundResult) {
+            mostrarHistorico(lastRoundResult);
+            lastRoundResult = null; // Limpa a variável
+        }
+    });
 
+    // Sockets
     socket.on('updatePlayers', updatePlayerList);
     socket.on('resetGame', () => window.location.reload());
 
@@ -110,6 +139,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResetJogadores.classList.add('hidden');
         listaDicasUl.innerHTML = '';
         numeroSecretoDisplay.classList.add('hidden');
+        lastRoundResult = null; // Limpa o resultado da rodada anterior
         numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
         categoriaRodadaSpan.textContent = gameInfo.categoria;
         temaRodadaSpan.textContent = gameInfo.tema;
@@ -149,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
         sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
     });
     
+    // Lida com resultados individuais
     socket.on('orderResult', (result) => {
         updatePlayerList(result.players);
         tentativasRestantesSpan.textContent = result.attemptsLeft;
@@ -163,24 +194,24 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // Lida com o FIM DA RODADA (LÓGICA CORRIGIDA)
     socket.on('roundOver', (result) => {
+        ordenacaoSection.classList.add('hidden');
+        lastRoundResult = result; // Guarda o resultado final
+
         const lastPlayer = result.lastPlayerResult;
+        
+        // Se EU SOU o último jogador, mostra meu popup final
         if (lastPlayer && lastPlayer.id === socket.id) {
             if (lastPlayer.isCorrect) {
                 showMessage('PARABÉNS!', `Você acertou e ganhou ${lastPlayer.points} pontos!`, 'success');
             } else {
                 showMessage('FIM DAS TENTATIVAS!', 'Você não acertou.', 'error');
             }
+        } else {
+            // Se eu NÃO SOU o último, mostra o histórico imediatamente
+            mostrarHistorico(result);
+            lastRoundResult = null; // Limpa para não bugar o botão "OK"
         }
-        
-        setTimeout(() => {
-            mensagemCustomizada.classList.add('hidden');
-            ordenacaoSection.classList.add('hidden');
-            historicoRodadaDiv.classList.remove('hidden');
-            listaHistoricoUl.innerHTML = result.historyHtml;
-            updatePlayerList(result.players);
-            btnProximaRodada.classList.remove('hidden');
-            btnResetJogadores.classList.remove('hidden'); 
-        }, 2000);
     });
 });
