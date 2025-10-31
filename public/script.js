@@ -115,19 +115,25 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('resetGame', () => window.location.reload());
 
     socket.on('gameStarted', (gameInfo) => {
-        if (musica.paused) musica.play().catch(e => {});
-        cadastroSection.classList.add('hidden');
-        jogoSection.classList.remove('hidden');
-        ordenacaoSection.classList.add('hidden');
-        historicoRodadaDiv.classList.add('hidden');
-        btnProximaRodada.classList.add('hidden');
-        btnResetJogadores.classList.add('hidden');
-        listaDicasUl.innerHTML = '';
-        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
-        categoriaRodadaSpan.textContent = gameInfo.categoria;
-        temaRodadaSpan.textContent = gameInfo.tema;
-        socket.emit('requestNextTipper');
-    });
+    if (musica.paused) musica.play().catch(e => {});
+    
+    cadastroSection.classList.add('hidden');
+    jogoSection.classList.remove('hidden');
+    ordenacaoSection.classList.add('hidden');
+    historicoRodadaDiv.classList.add('hidden');
+    btnProximaRodada.classList.add('hidden');
+    btnResetJogadores.classList.add('hidden');
+    listaDicasUl.innerHTML = '';
+    
+    // LINHA ADICIONADA: Garante que o número secreto da rodada anterior suma.
+    numeroSecretoDisplay.classList.add('hidden');
+    
+    numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
+    categoriaRodadaSpan.textContent = gameInfo.categoria;
+    temaRodadaSpan.textContent = gameInfo.tema;
+    
+    socket.emit('requestNextTipper');
+});
     
  socket.on('nextTipper', (player) => {
     nomeJogadorVezSpan.textContent = player.name;
@@ -203,6 +209,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResetJogadores.classList.remove('hidden'); 
     });
 });
+
 
 
 
