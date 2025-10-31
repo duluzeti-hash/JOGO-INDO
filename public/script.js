@@ -35,18 +35,14 @@ document.addEventListener('DOMContentLoaded', () => {
     const btnFecharMensagem = document.getElementById('btn-fechar-mensagem');
     const musica = document.getElementById('musica');
     
+    let currentSecretNumber = 0;
     let sortable;
 
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
         mensagemCustomizada.className = '';
-        mensagemCustomizada.classList.add('mensagem-customizada');
-        if (type === 'success') {
-            mensagemCustomizada.classList.add('mensagem-sucesso');
-        } else if (type === 'error') {
-            mensagemCustomizada.classList.add('mensagem-erro');
-        }
+        mensagemCustomizada.classList.add('mensagem-customizada', `mensagem-${type}`);
         mensagemCustomizada.classList.remove('hidden');
     }
 
@@ -90,13 +86,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnEnviarDica.addEventListener('click', () => {
-    const tip = inputDica.value.trim();
-    if (tip) {
-        socket.emit('sendTip', { tip, number: currentSecretNumber });
-        inputDica.disabled = true;
-        btnEnviarDica.disabled = true;
-    }
-});
+        const tip = inputDica.value.trim();
+        if (tip) {
+            socket.emit('sendTip', { tip, number: currentSecretNumber });
+            inputDica.disabled = true;
+            btnEnviarDica.disabled = true;
+        }
+    });
 
     btnOrdenar.addEventListener('click', () => {
         if (sortable) {
@@ -115,96 +111,86 @@ document.addEventListener('DOMContentLoaded', () => {
     socket.on('resetGame', () => window.location.reload());
 
     socket.on('gameStarted', (gameInfo) => {
-    if (musica.paused) musica.play().catch(e => {});
-    
-    cadastroSection.classList.add('hidden');
-    jogoSection.classList.remove('hidden');
-    ordenacaoSection.classList.add('hidden');
-    historicoRodadaDiv.classList.add('hidden');
-    btnProximaRodada.classList.add('hidden');
-    btnResetJogadores.classList.add('hidden');
-    listaDicasUl.innerHTML = '';
-    
-    // LINHA ADICIONADA: Garante que o número secreto da rodada anterior suma.
-    numeroSecretoDisplay.classList.add('hidden');
-    
-    numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
-    categoriaRodadaSpan.textContent = gameInfo.categoria;
-    temaRodadaSpan.textContent = gameInfo.tema;
-    
-    socket.emit('requestNextTipper');
-});
-    
- socket.on('nextTipper', (player) => {
-    nomeJogadorVezSpan.textContent = player.name;
-    nomeJogadorDicaSpan.textContent = player.name;
-    const isMyTurn = player.id === socket.id;
-
-    espacoDicas.classList.toggle('hidden', !isMyTurn);
-    
-    if (isMyTurn) {
-        currentSecretNumber = Math.floor(Math.random() * 100) + 1;
-        numeroSecretoDisplay.textContent = currentSecretNumber;
-        numeroSecretoDisplay.classList.remove('hidden');
+        if (musica.paused) musica.play().catch(e => {});
         
-        inputDica.disabled = false;
-        btnEnviarDica.disabled = false;
-        inputDica.value = '';
-        inputDica.focus();
-    } else {
+        cadastroSection.classList.add('hidden');
+        jogoSection.classList.remove('hidden');
+        ordenacaoSection.classList.add('hidden');
+        historicoRodadaDiv.classList.add('hidden');
+        btnProximaRodada.classList.add('hidden');
+        btnResetJogadores.classList.add('hidden');
+        listaDicasUl.innerHTML = '';
         numeroSecretoDisplay.classList.add('hidden');
-    }
-});
-
-   socket.on('startSortingPhase', (tipsToGuess) => {
-    // Garante que a seção de dar dicas SUMA para todos.
-    espacoDicas.classList.add('hidden'); 
-    
-    nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
-    ordenacaoSection.classList.remove('hidden');
-    tentativasRestantesSpan.textContent = 3;
-    listaDicasOrdenarUl.innerHTML = '';
-    
-    tipsToGuess.forEach((tip) => {  
-        const li = document.createElement('li');
-        li.textContent = tip;
-        li.classList.add('sortable-item');
-        listaDicasOrdenarUl.appendChild(li);
+        
+        numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
+        categoriaRodadaSpan.textContent = gameInfo.categoria;
+        temaRodadaSpan.textContent = gameInfo.tema;
+        
+        socket.emit('requestNextTipper');
     });
     
-    if (sortable) {
-        sortable.destroy();
-    }
-    sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
-});
+    socket.on('nextTipper', (player) => {
+        nomeJogadorVezSpan.textContent = player.name;
+        nomeJogadorDicaSpan.textContent = player.name;
+        
+        const isMyTurn = player.id === socket.id;
+        espacoDicas.classList.toggle('hidden', !isMyTurn);
+        
+        if (isMyTurn) {
+            currentSecretNumber = Math.floor(Math.random() * 100) + 1;
+            numeroSecretoDisplay.textContent = currentSecretNumber;
+            numeroSecretoDisplay.classList.remove('hidden');
+            
+            inputDica.disabled = false;
+            btnEnviarDica.disabled = false;
+            inputDica.value = '';
+            inputDica.focus();
+        }
+    });
+
+    socket.on('startSortingPhase', (tipsToGuess) => {
+        espacoDicas.classList.add('hidden');
+        nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
+        ordenacaoSection.classList.remove('hidden');
+        tentativasRestantesSpan.textContent = 3;
+        btnOrdenar.disabled = false;
+        
+        listaDicasOrdenarUl.innerHTML = '';
+        tipsToGuess.forEach((tip) => {  
+            const li = document.createElement('li');
+            li.textContent = tip;
+            li.classList.add('sortable-item');
+            listaDicasOrdenarUl.appendChild(li);
+        });
+        
+        if (sortable) sortable.destroy();
+        sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
+    });
     
     socket.on('orderResult', (result) => {
-    updatePlayerList(result.players);
-    // CORRIGE O BUG VISUAL: Atualiza as tentativas restantes mesmo no acerto.
-    tentativasRestantesSpan.textContent = result.attemptsLeft;
+        updatePlayerList(result.players);
+        tentativasRestantesSpan.textContent = result.attemptsLeft;
 
-    if (result.isCorrect) {
-        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-        btnOrdenar.disabled = true;
-    } else if (result.attemptsLeft > 0) {
-        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-    } else {
-        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-        btnOrdenar.disabled = true;
-    }
-});
+        if (result.isCorrect) {
+            showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
+            btnOrdenar.disabled = true;
+        } else if (result.attemptsLeft > 0) {
+            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+        } else {
+            showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
+            btnOrdenar.disabled = true;
+        }
+    });
+
     socket.on('roundOver', (result) => {
         mensagemCustomizada.classList.add('hidden');
         ordenacaoSection.classList.add('hidden');
+        
         historicoRodadaDiv.classList.remove('hidden');
         listaHistoricoUl.innerHTML = result.historyHtml;
         updatePlayerList(result.players);
+        
         btnProximaRodada.classList.remove('hidden');
         btnResetJogadores.classList.remove('hidden'); 
     });
 });
-
-
-
-
-
