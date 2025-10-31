@@ -353,13 +353,13 @@ button:hover {
     margin-bottom: 20px;
 }
 
-.mensagem-sucesso {
+.mensagem-success {
     background-color: rgba(46, 125, 50, 0.85); /* Verde vibrante com transparência */
     border-color: #6eff74; /* Borda verde clara */
     backdrop-filter: blur(5px);
 }
 
-.mensagem-erro {
+.mensagem-error {
     background-color: rgba(217, 83, 79, 0.85); /* Vermelho vibrante com transparência */
     border-color: #ff8a87; /* Borda vermelha clara */
     backdrop-filter: blur(5px);
@@ -413,4 +413,5 @@ button:hover {
 .lista-comparacao-jogador li {
     color: #ffffb3;
 }
+
 
