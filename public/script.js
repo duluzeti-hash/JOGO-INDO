@@ -180,25 +180,19 @@ document.addEventListener('DOMContentLoaded', () => {
     
     socket.on('orderResult', (result) => {
     updatePlayerList(result.players);
+    // CORRIGE O BUG VISUAL: Atualiza as tentativas restantes mesmo no acerto.
+    tentativasRestantesSpan.textContent = result.attemptsLeft;
 
-    // Se o jogador acertou, a gente mostra o parabéns e desabilita o botão SÓ PARA ELE.
     if (result.isCorrect) {
         showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
         btnOrdenar.disabled = true;
-    } 
-    // Se errou, mas ainda tem tentativas
-    else if (result.attemptsLeft > 0) {
-        tentativasRestantesSpan.textContent = result.attemptsLeft;
+    } else if (result.attemptsLeft > 0) {
         showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-        // O botão continua HABILITADO para ele tentar de novo.
-    } 
-    // Se zerou as tentativas
-    else {
+    } else {
         showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-        btnOrdenar.disabled = true; // Agora sim, desabilita o botão.
+        btnOrdenar.disabled = true;
     }
 });
-
     socket.on('roundOver', (result) => {
         mensagemCustomizada.classList.add('hidden');
         ordenacaoSection.classList.add('hidden');
@@ -209,6 +203,7 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResetJogadores.classList.remove('hidden'); 
     });
 });
+
 
 
 
