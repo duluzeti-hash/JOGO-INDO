@@ -150,30 +150,48 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-    socket.on('startSortingPhase', (tipsToGuess) => {
-        nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
-        ordenacaoSection.classList.remove('hidden');
-        btnOrdenar.disabled = false;
-        listaDicasOrdenarUl.innerHTML = '';
-        tipsToGuess.forEach((tip) => {  
-            const li = document.createElement('li');
-            li.textContent = tip;
-            li.classList.add('sortable-item');
-            listaDicasOrdenarUl.appendChild(li);
-        });
-        if (sortable) sortable.destroy();
-        sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
+   socket.on('startSortingPhase', (tipsToGuess) => {
+    // Garante que a seção de dar dicas SUMA para todos.
+    espacoDicas.classList.add('hidden'); 
+    
+    nomeJogadorVezSpan.textContent = 'Sua vez de ordenar!';
+    ordenacaoSection.classList.remove('hidden');
+    tentativasRestantesSpan.textContent = 3;
+    listaDicasOrdenarUl.innerHTML = '';
+    
+    tipsToGuess.forEach((tip) => {  
+        const li = document.createElement('li');
+        li.textContent = tip;
+        li.classList.add('sortable-item');
+        listaDicasOrdenarUl.appendChild(li);
     });
     
+    if (sortable) {
+        sortable.destroy();
+    }
+    sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
+});
+    
     socket.on('orderResult', (result) => {
-        updatePlayerList(result.players);
+    updatePlayerList(result.players);
+
+    // Se o jogador acertou, a gente mostra o parabéns e desabilita o botão SÓ PARA ELE.
+    if (result.isCorrect) {
+        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
         btnOrdenar.disabled = true;
-        if (result.isCorrect) {
-            showMessage('PARABÉNS!', `Você acertou a ordem! Aguardando os outros jogadores...`, 'success');
-        } else {
-            showMessage('ERROU!', `Você errou a ordem. Aguardando os outros jogadores...`, 'error');
-        }
-    });
+    } 
+    // Se errou, mas ainda tem tentativas
+    else if (result.attemptsLeft > 0) {
+        tentativasRestantesSpan.textContent = result.attemptsLeft;
+        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+        // O botão continua HABILITADO para ele tentar de novo.
+    } 
+    // Se zerou as tentativas
+    else {
+        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
+        btnOrdenar.disabled = true; // Agora sim, desabilita o botão.
+    }
+});
 
     socket.on('roundOver', (result) => {
         mensagemCustomizada.classList.add('hidden');
@@ -185,5 +203,6 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResetJogadores.classList.remove('hidden'); 
     });
 });
+
 
 
