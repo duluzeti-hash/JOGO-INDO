@@ -117,27 +117,23 @@ io.on('connection', (socket) => {
 
     let points = 0;
     if (isCorrect) {
-        if (attemptsLeft === 2) points = 30;
-        else if (attemptsLeft === 1) points = 20;
-        else if (attemptsLeft === 0) points = 10;
+        if (attemptsLeft === 2) points = 30;      // Acerto na 1ª tentativa
+        else if (attemptsLeft === 1) points = 20; // Acerto na 2ª
+        else if (attemptsLeft === 0) points = 10; // Acerto na 3ª
         player.score += points;
     }
-    
+
     if (isCorrect || attemptsLeft === 0) {
         roundData.playersWhoFinished[player.id] = true;
     }
     
     const rankedPlayers = [...players].sort((a, b) => b.score - a.score);
-
-    // ===== A LÓGICA FINAL E CORRIGIDA ESTÁ AQUI =====
     const everyoneFinished = Object.keys(roundData.playersWhoFinished).length === players.length;
 
     if (everyoneFinished) {
-        // Se este é o ÚLTIMO jogador, envia o comando final para TODOS.
         const historyHtml = correctOrder.map(tip => `<li>${tip}</li>`).join('');
         io.emit('roundOver', { historyHtml, players: rankedPlayers });
     } else {
-        // Se AINDA FALTAM jogadores, envia o resultado individual SÓ para quem tentou.
         socket.emit('orderResult', { isCorrect, points, attemptsLeft, players: rankedPlayers });
     }
 });
@@ -151,5 +147,6 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
 
 
