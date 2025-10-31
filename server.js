@@ -105,7 +105,7 @@ io.on('connection', (socket) => {
     roundData.playerAttempts[player.id]--;
     const attemptsLeft = roundData.playerAttempts[player.id];
 
-    // Pega a ordem correta MANTENDO os objetos de dica
+    // Pega a ordem correta MANTENDO os objetos de dica (NÃO SÓ O TEXTO)
     const correctOrderObjects = [...currentTips].sort((a, b) => a.number - b.number);
     // Pega o texto da ordem correta para comparar
     const correctOrderText = correctOrderObjects.map(t => t.tip);
@@ -131,6 +131,7 @@ io.on('connection', (socket) => {
 
     if (everyoneFinished) {
         // ===== A ÚNICA LINHA CORRIGIDA ESTÁ AQUI =====
+        // Ela agora usa "correctOrderObjects" para ter acesso a "tip.number" e "tip.player.name"
         const historyHtml = correctOrderObjects.map((tip, index) => `<li data-numero="${index + 1}"><b>${tip.tip}</b> <i>(Nº ${tip.number} por ${tip.player.name})</i></li>`).join('');
         // ===== FIM DA CORREÇÃO =====
 
@@ -149,5 +150,6 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
 
 
