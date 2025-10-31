@@ -20,30 +20,21 @@ let currentTips = [];
 let roundData = {};
 
 const temas = [
-    // CUSTOS E FINANÇAS
     { categoria: "CUSTOS OPERACIONAIS", tema: "O impacto da flutuação do preço do diesel na planilha de frete" },
     { categoria: "CUSTOS OPERACIONAIS", tema: "Manutenção preventiva vs. corretiva: qual reduz mais os gastos?" },
     { categoria: "CUSTOS OPERACIONAIS", tema: "Custo real de pedágios em rotas de longa distância no Brasil" },
     { categoria: "GESTÃO FINANCEIRA", tema: "Como calcular o ponto de equilíbrio de um veículo de carga" },
     { categoria: "TRIBUTAÇÃO", tema: "Impacto de impostos como ICMS e IPI no valor final do frete" },
-
-    // GESTÃO DE PESSOAS
     { categoria: "GESTÃO DE PESSOAS", tema: "Estratégias para reduzir o turnover (rotatividade) de motoristas" },
     { categoria: "GESTÃO DE PESSOAS", tema: "A importância do treinamento e capacitação contínua para a equipe" },
     { categoria: "LEGISLAÇÃO TRABALHISTA", tema: "Lei do Descanso: como cumprir a jornada de trabalho do motorista sem perder produtividade" },
-
-    // TECNOLOGIA E INOVAÇÃO
     { categoria: "TECNOLOGIA", tema: "O papel da Telemetria na redução de custos e aumento da segurança" },
     { categoria: "TECNOLOGIA", tema: "Benefícios da roteirização inteligente para otimização de entregas" },
     { categoria: "INOVAÇÃO", tema: "O futuro dos caminhões autônomos e o impacto no mercado de trabalho" },
-
-    // LEGISLAÇÃO E SEGURANÇA
     { categoria: "LEGISLAÇÃO", tema: "Principais exigências da ANTT para o transporte de cargas" },
     { categoria: "SEGURANÇA", tema: "Tecnologias e estratégias eficazes para a prevenção de roubo de cargas" },
     { categoria: "SEGURANÇA", tema: "A relação entre a fadiga do motorista e o risco de acidentes" },
     { categoria: "SEGURANÇA", tema: "Regras para o transporte de cargas perigosas (produtos químicos, inflamáveis)" },
-
-    // LOGÍSTICA E ESTRATÉGIA
     { categoria: "LOGÍSTICA VERDE", tema: "Práticas de ESG (Ambiental, Social e Governança) no setor de transportes" },
     { categoria: "LOGÍSTICA REVERSA", tema: "Os desafios de coletar e transportar produtos pós-consumo" },
     { categoria: "INFRAESTRUTURA", tema: "O impacto da má condição das estradas brasileiras na operação logística" },
@@ -54,7 +45,8 @@ const temas = [
 function resetRoundState() {
     currentTips = [];
     roundData = {
-        playersWhoFinished: {}
+        playerAttempts: {},   // <-- Zera as tentativas de cada um
+        playersWhoFinished: {} // <-- Zera a lista de quem já terminou
     };
 }
 
@@ -63,7 +55,7 @@ io.on('connection', (socket) => {
     socket.emit('updatePlayers', players);
 
     socket.on('addPlayer', ({ name }) => {
-        if (players.length < 8) {
+        if (players.length < 8 && !players.some(p => p.id === socket.id)) {
             const newPlayer = { id: socket.id, name, score: 0 };
             players.push(newPlayer);
             io.emit('updatePlayers', players);
@@ -77,13 +69,10 @@ io.on('connection', (socket) => {
     });
 
     socket.on('startGame', (data) => {
-        resetRoundState();
-        let gameInfo = {};
-        if (data.tema === 'aleatorio') {
-            gameInfo = temas[Math.floor(Math.random() * temas.length)];
-        } else {
-            gameInfo = { categoria: data.categoria, tema: data.tema };
-        }
+        resetRoundState(); // <-- Garante que toda nova rodada comece 100% limpa
+        let gameInfo = (data.tema === 'aleatorio')
+            ? temas[Math.floor(Math.random() * temas.length)]
+            : { categoria: data.categoria, tema: data.tema };
         io.emit('gameStarted', gameInfo);
     });
 
@@ -92,6 +81,7 @@ io.on('connection', (socket) => {
             const nextTipper = players[currentTips.length];
             io.emit('nextTipper', nextTipper);
         } else {
+            // Quando todos deram a dica, começa a fase de ordenação
             const shuffledTips = [...currentTips].sort(() => Math.random() - 0.5).map(t => t.tip);
             io.emit('startSortingPhase', shuffledTips);
         }
@@ -101,6 +91,7 @@ io.on('connection', (socket) => {
         const player = players.find(p => p.id === socket.id);
         if (player) {
             currentTips.push({ ...tipData, player: { name: player.name, id: player.id } });
+            // Chama a mesma lógica para passar a vez ou iniciar a ordenação
             if (currentTips.length < players.length) {
                 const nextTipper = players[currentTips.length];
                 io.emit('nextTipper', nextTipper);
@@ -113,19 +104,35 @@ io.on('connection', (socket) => {
 
     socket.on('checkOrder', ({ orderedTips }) => {
         const player = players.find(p => p.id === socket.id);
-        if (!player) return;
+        if (!player || roundData.playersWhoFinished[player.id]) return;
+
+        // Gerencia as 3 tentativas individualmente
+        if (roundData.playerAttempts[player.id] === undefined) {
+            roundData.playerAttempts[player.id] = 3;
+        }
+        roundData.playerAttempts[player.id]--;
+        const attemptsLeft = roundData.playerAttempts[player.id];
 
         const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
         const isCorrect = orderedTips.every((value, index) => value === correctOrder[index]);
 
+        let points = 0;
         if (isCorrect) {
-            player.score += 30;
+            if (attemptsLeft === 2) points = 30;
+            else if (attemptsLeft === 1) points = 20;
+            else if (attemptsLeft === 0) points = 10;
+            player.score += points;
+            roundData.playersWhoFinished[player.id] = true;
         }
 
-        roundData.playersWhoFinished[player.id] = true;
+        if (attemptsLeft === 0) {
+            roundData.playersWhoFinished[player.id] = true;
+        }
+        
         const rankedPlayers = [...players].sort((a, b) => b.score - a.score);
-        socket.emit('orderResult', { isCorrect, players: rankedPlayers });
+        socket.emit('orderResult', { isCorrect, points, attemptsLeft, players: rankedPlayers });
 
+        // Só encerra a rodada quando TODOS tiverem jogado
         if (Object.keys(roundData.playersWhoFinished).length === players.length) {
             const historyHtml = correctOrder.map(tip => `<li>${tip}</li>`).join('');
             io.emit('roundOver', { historyHtml, players: rankedPlayers });
@@ -142,4 +149,3 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
-
