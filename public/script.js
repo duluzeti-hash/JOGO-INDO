@@ -1,6 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     const socket = io({ transports: ['websocket', 'polling'] });
 
+    // === Referências de elementos ===
     const cadastroSection = document.getElementById('cadastro-jogadores');
     const jogoSection = document.getElementById('jogo');
     const nomeJogadorInput = document.getElementById('nome-jogador');
@@ -34,30 +35,30 @@ document.addEventListener('DOMContentLoaded', () => {
     const mensagemTexto = document.getElementById('mensagem-texto');
     const btnFecharMensagem = document.getElementById('btn-fechar-mensagem');
     const musica = document.getElementById('musica');
-    
+
     let currentSecretNumber = 0;
     let sortable;
     let lastRoundResult = null;
 
+    // === Funções auxiliares ===
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
         mensagemCustomizada.classList.remove('mensagem-success', 'mensagem-error');
-        if (type === 'success') {
-            mensagemCustomizada.classList.add('mensagem-success');
-        } else if (type === 'error') {
-            mensagemCustomizada.classList.add('mensagem-error');
-        }
+        if (type === 'success') mensagemCustomizada.classList.add('mensagem-success');
+        if (type === 'error') mensagemCustomizada.classList.add('mensagem-error');
         mensagemCustomizada.classList.remove('hidden');
     }
 
     function updatePlayerList(playerList) {
         listaJogadoresDiv.innerHTML = '<h4>Jogadores (Ranking):</h4>';
         playerList.sort((a, b) => b.score - a.score).forEach((player, index) => {
-            const playerDiv = document.createElement('div');
-            playerDiv.classList.add('player-item');
-            playerDiv.innerHTML = `<span class="player-rank">${index + 1}º</span> <span class="player-name">${player.name}</span> <span class="player-score">${player.score} pts</span>`;
-            listaJogadoresDiv.appendChild(playerDiv);
+            const div = document.createElement('div');
+            div.classList.add('player-item');
+            div.innerHTML = `<span class="player-rank">${index + 1}º</span>
+                             <span class="player-name">${player.name}</span>
+                             <span class="player-score">${player.score} pts</span>`;
+            listaJogadoresDiv.appendChild(div);
         });
         const canStart = playerList.length >= 2;
         btnIniciarJogo.classList.toggle('hidden', !canStart);
@@ -68,12 +69,13 @@ document.addEventListener('DOMContentLoaded', () => {
         mensagemCustomizada.classList.add('hidden');
         ordenacaoSection.classList.add('hidden');
         historicoRodadaDiv.classList.remove('hidden');
-        listaHistoricoUl.innerHTML = result.historyHtml;
+        listaHistoricoUl.innerHTML = result.historyHtml || '<li>Nenhum histórico encontrado.</li>';
         updatePlayerList(result.players);
         btnProximaRodada.classList.remove('hidden');
-        btnResetJogadores.classList.remove('hidden'); 
+        btnResetJogadores.classList.remove('hidden');
     }
 
+    // === Botões ===
     btnAddJogador.addEventListener('click', () => {
         const name = nomeJogadorInput.value.trim();
         if (name) socket.emit('addPlayer', { name });
@@ -110,7 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnProximaRodada.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
-    
+
     btnFecharMensagem.addEventListener('click', () => {
         mensagemCustomizada.classList.add('hidden');
         if (lastRoundResult) {
@@ -119,11 +121,12 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // === Eventos do socket ===
     socket.on('updatePlayers', updatePlayerList);
     socket.on('resetGame', () => window.location.reload());
 
     socket.on('gameStarted', (gameInfo) => {
-        if (musica.paused) musica.play().catch(e => {});
+        if (musica.paused) musica.play().catch(() => {});
         cadastroSection.classList.add('hidden');
         jogoSection.classList.remove('hidden');
         ordenacaoSection.classList.add('hidden');
@@ -138,7 +141,7 @@ document.addEventListener('DOMContentLoaded', () => {
         temaRodadaSpan.textContent = gameInfo.tema;
         socket.emit('requestNextTipper');
     });
-    
+
     socket.on('nextTipper', (player) => {
         nomeJogadorVezSpan.textContent = player.name;
         nomeJogadorDicaSpan.textContent = player.name;
@@ -162,7 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
         tentativasRestantesSpan.textContent = 3;
         btnOrdenar.disabled = false;
         listaDicasOrdenarUl.innerHTML = '';
-        tipsToGuess.forEach((tip) => {  
+        tipsToGuess.forEach(tip => {
             const li = document.createElement('li');
             li.textContent = tip;
             li.classList.add('sortable-item');
@@ -171,7 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (sortable) sortable.destroy();
         sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
     });
-    
+
     socket.on('orderResult', (result) => {
         updatePlayerList(result.players);
         tentativasRestantesSpan.textContent = result.attemptsLeft;
@@ -187,10 +190,11 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     socket.on('roundOver', (result) => {
+        // Proteção adicional para histórico nulo
+        if (!result || !result.players) return;
         ordenacaoSection.classList.add('hidden');
         lastRoundResult = result;
         const lastPlayer = result.lastPlayerResult;
-        
         if (lastPlayer && lastPlayer.id === socket.id) {
             if (lastPlayer.isCorrect) {
                 showMessage('PARABÉNS!', `Você acertou e ganhou ${lastPlayer.points} pontos!`, 'success');
