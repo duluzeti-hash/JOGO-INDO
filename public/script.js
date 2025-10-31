@@ -41,14 +41,14 @@ document.addEventListener('DOMContentLoaded', () => {
     function showMessage(title, text, type = 'info') {
         mensagemTitulo.textContent = title;
         mensagemTexto.textContent = text;
-        mensagemCustomizada.className = '';
-        mensagemCustomizada.classList.add('mensagem-customizada', `mensagem-${type}`);
+        mensagemCustomizada.classList.remove('mensagem-sucesso', 'mensagem-erro');
+        mensagemCustomizada.classList.add(`mensagem-${type}`);
         mensagemCustomizada.classList.remove('hidden');
     }
 
     function updatePlayerList(playerList) {
         listaJogadoresDiv.innerHTML = '<h4>Jogadores (Ranking):</h4>';
-        playerList.forEach((player, index) => {
+        playerList.sort((a, b) => b.score - a.score).forEach((player, index) => {
             const playerDiv = document.createElement('div');
             playerDiv.classList.add('player-item');
             playerDiv.innerHTML = `<span class="player-rank">${index + 1}º</span> <span class="player-name">${player.name}</span> <span class="player-score">${player.score} pts</span>`;
@@ -61,16 +61,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     btnAddJogador.addEventListener('click', () => {
         const name = nomeJogadorInput.value.trim();
-        if (name) {
-            socket.emit('addPlayer', { name });
-            nomeJogadorInput.value = '';
-        }
+        if (name) socket.emit('addPlayer', { name });
+        nomeJogadorInput.value = '';
     });
 
     btnResetJogadores.addEventListener('click', () => {
-        if (confirm('Tem certeza que deseja resetar o jogo e as pontuações?')) {
-            socket.emit('resetPlayers');
-        }
+        if (confirm('Tem certeza que deseja resetar o jogo e as pontuações?')) socket.emit('resetPlayers');
     });
 
     btnIniciarJogo.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
@@ -78,11 +74,8 @@ document.addEventListener('DOMContentLoaded', () => {
     btnUsarManual.addEventListener('click', () => {
         const categoria = categoriaManualInput.value.trim();
         const tema = temaManualInput.value.trim();
-        if (categoria && tema) {
-            socket.emit('startGame', { categoria, tema });
-        } else {
-            showMessage('Atenção!', 'Por favor, preencha a categoria e o tema.', 'error');
-        }
+        if (categoria && tema) socket.emit('startGame', { categoria, tema });
+        else showMessage('Atenção!', 'Por favor, preencha a categoria e o tema.', 'error');
     });
 
     btnEnviarDica.addEventListener('click', () => {
@@ -102,17 +95,13 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     btnProximaRodada.addEventListener('click', () => socket.emit('startGame', { tema: 'aleatorio' }));
-
-    btnFecharMensagem.addEventListener('click', () => {
-        mensagemCustomizada.classList.add('hidden');
-    });
+    btnFecharMensagem.addEventListener('click', () => mensagemCustomizada.classList.add('hidden'));
 
     socket.on('updatePlayers', updatePlayerList);
     socket.on('resetGame', () => window.location.reload());
 
     socket.on('gameStarted', (gameInfo) => {
         if (musica.paused) musica.play().catch(e => {});
-        
         cadastroSection.classList.add('hidden');
         jogoSection.classList.remove('hidden');
         ordenacaoSection.classList.add('hidden');
@@ -121,26 +110,21 @@ document.addEventListener('DOMContentLoaded', () => {
         btnResetJogadores.classList.add('hidden');
         listaDicasUl.innerHTML = '';
         numeroSecretoDisplay.classList.add('hidden');
-        
         numRodadaSpan.textContent = parseInt(numRodadaSpan.textContent || 0) + 1;
         categoriaRodadaSpan.textContent = gameInfo.categoria;
         temaRodadaSpan.textContent = gameInfo.tema;
-        
         socket.emit('requestNextTipper');
     });
     
     socket.on('nextTipper', (player) => {
         nomeJogadorVezSpan.textContent = player.name;
         nomeJogadorDicaSpan.textContent = player.name;
-        
         const isMyTurn = player.id === socket.id;
         espacoDicas.classList.toggle('hidden', !isMyTurn);
-        
         if (isMyTurn) {
             currentSecretNumber = Math.floor(Math.random() * 100) + 1;
             numeroSecretoDisplay.textContent = currentSecretNumber;
             numeroSecretoDisplay.classList.remove('hidden');
-            
             inputDica.disabled = false;
             btnEnviarDica.disabled = false;
             inputDica.value = '';
@@ -154,7 +138,6 @@ document.addEventListener('DOMContentLoaded', () => {
         ordenacaoSection.classList.remove('hidden');
         tentativasRestantesSpan.textContent = 3;
         btnOrdenar.disabled = false;
-        
         listaDicasOrdenarUl.innerHTML = '';
         tipsToGuess.forEach((tip) => {  
             const li = document.createElement('li');
@@ -162,49 +145,42 @@ document.addEventListener('DOMContentLoaded', () => {
             li.classList.add('sortable-item');
             listaDicasOrdenarUl.appendChild(li);
         });
-        
         if (sortable) sortable.destroy();
         sortable = Sortable.create(listaDicasOrdenarUl, { animation: 150 });
     });
     
     socket.on('orderResult', (result) => {
-    updatePlayerList(result.players);
-    tentativasRestantesSpan.textContent = result.attemptsLeft;
-
-    if (result.isCorrect) {
-        showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
-        btnOrdenar.disabled = true;
-    } else if (result.attemptsLeft > 0) {
-        showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
-    } else {
-        showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
-        btnOrdenar.disabled = true;
-    }
-});
-
-// Esta função lida com o FIM DA RODADA para todo mundo
-socket.on('roundOver', (result) => {
-    // Pega os dados do último jogador que finalizou a rodada
-    const lastPlayer = result.lastPlayerResult;
-    
-    // Se EU sou o último jogador, mostra a MINHA mensagem final de acerto ou erro
-    if (lastPlayer && lastPlayer.id === socket.id) {
-        if (lastPlayer.isCorrect) {
-            showMessage('PARABÉNS!', `Você acertou e ganhou ${lastPlayer.points} pontos!`, 'success');
-        } else {
-            showMessage('FIM DAS TENTATIVAS!', 'Você não acertou.', 'error');
-        }
-    }
-    
-    // Espera 2 segundos para dar tempo do último jogador ler sua mensagem
-    setTimeout(() => {
-        // E então, mostra o histórico final para TODO MUNDO
-        mensagemCustomizada.classList.add('hidden');
-        ordenacaoSection.classList.add('hidden');
-        historicoRodadaDiv.classList.remove('hidden');
-        listaHistoricoUl.innerHTML = result.historyHtml;
         updatePlayerList(result.players);
-        btnProximaRodada.classList.remove('hidden');
-        btnResetJogadores.classList.remove('hidden'); 
-    }, 2000); // Atraso de 2 segundos
+        tentativasRestantesSpan.textContent = result.attemptsLeft;
+        if (result.isCorrect) {
+            showMessage('PARABÉNS!', `Você acertou e ganhou ${result.points} pontos! Aguardando os outros jogadores...`, 'success');
+            btnOrdenar.disabled = true;
+        } else if (result.attemptsLeft > 0) {
+            showMessage('QUASE LÁ!', `Você errou. Tentativas restantes: ${result.attemptsLeft}`, 'error');
+        } else {
+            showMessage('FIM DAS TENTATIVAS!', 'Você não acertou. Aguardando os outros jogadores...', 'error');
+            btnOrdenar.disabled = true;
+        }
+    });
+
+    socket.on('roundOver', (result) => {
+        const lastPlayer = result.lastPlayerResult;
+        if (lastPlayer && lastPlayer.id === socket.id) {
+            if (lastPlayer.isCorrect) {
+                showMessage('PARABÉNS!', `Você acertou e ganhou ${lastPlayer.points} pontos!`, 'success');
+            } else {
+                showMessage('FIM DAS TENTATIVAS!', 'Você não acertou.', 'error');
+            }
+        }
+        
+        setTimeout(() => {
+            mensagemCustomizada.classList.add('hidden');
+            ordenacaoSection.classList.add('hidden');
+            historicoRodadaDiv.classList.remove('hidden');
+            listaHistoricoUl.innerHTML = result.historyHtml;
+            updatePlayerList(result.players);
+            btnProximaRodada.classList.remove('hidden');
+            btnResetJogadores.classList.remove('hidden'); 
+        }, 2000);
+    });
 });
