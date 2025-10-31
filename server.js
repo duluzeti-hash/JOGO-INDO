@@ -123,22 +123,24 @@ io.on('connection', (socket) => {
         player.score += points;
     }
     
-    // Decisão final: se o jogador acertou OU zerou as tentativas, o turno dele acabou.
     if (isCorrect || attemptsLeft === 0) {
         roundData.playersWhoFinished[player.id] = true;
     }
     
     const rankedPlayers = [...players].sort((a, b) => b.score - a.score);
-    // Envia o resultado individual para o jogador saber o que aconteceu na sua tentativa.
-    socket.emit('orderResult', { isCorrect, points, attemptsLeft, players: rankedPlayers });
 
-    // A verificação mais importante: A rodada SÓ acaba se o número de jogadores que terminaram for igual ao total de jogadores.
-    if (Object.keys(roundData.playersWhoFinished).length === players.length) {
+    // ===== A LÓGICA FINAL E CORRIGIDA ESTÁ AQUI =====
+    const everyoneFinished = Object.keys(roundData.playersWhoFinished).length === players.length;
+
+    if (everyoneFinished) {
+        // Se este é o ÚLTIMO jogador, envia o comando final para TODOS.
         const historyHtml = correctOrder.map(tip => `<li>${tip}</li>`).join('');
         io.emit('roundOver', { historyHtml, players: rankedPlayers });
+    } else {
+        // Se AINDA FALTAM jogadores, envia o resultado individual SÓ para quem tentou.
+        socket.emit('orderResult', { isCorrect, points, attemptsLeft, players: rankedPlayers });
     }
 });
-
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
         io.emit('updatePlayers', players);
@@ -149,4 +151,5 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
 
