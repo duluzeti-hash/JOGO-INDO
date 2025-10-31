@@ -105,8 +105,12 @@ io.on('connection', (socket) => {
     roundData.playerAttempts[player.id]--;
     const attemptsLeft = roundData.playerAttempts[player.id];
 
-    const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
-    const isCorrect = orderedTips.every((value, index) => value === correctOrder[index]);
+    // Pega a ordem correta MANTENDO os objetos de dica
+    const correctOrderObjects = [...currentTips].sort((a, b) => a.number - b.number);
+    // Pega o texto da ordem correta para comparar
+    const correctOrderText = correctOrderObjects.map(t => t.tip);
+
+    const isCorrect = orderedTips.every((value, index) => value === correctOrderText[index]);
 
     let points = 0;
     if (isCorrect) {
@@ -127,7 +131,7 @@ io.on('connection', (socket) => {
 
     if (everyoneFinished) {
         // ===== A ÚNICA LINHA CORRIGIDA ESTÁ AQUI =====
-        const historyHtml = [...currentTips].sort((a, b) => a.number - b.number).map((tip, index) => `<li data-numero="${index + 1}"><b>${tip.tip}</b> <i>(Nº ${tip.number} por ${tip.player.name})</i></li>`).join('');
+        const historyHtml = correctOrderObjects.map((tip, index) => `<li data-numero="${index + 1}"><b>${tip.tip}</b> <i>(Nº ${tip.number} por ${tip.player.name})</i></li>`).join('');
         // ===== FIM DA CORREÇÃO =====
 
         io.emit('roundOver', { historyHtml, players: rankedPlayers, lastPlayerResult: { ...resultPayload, id: player.id } });
@@ -145,4 +149,5 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
 
