@@ -103,41 +103,41 @@ io.on('connection', (socket) => {
     });
 
     socket.on('checkOrder', ({ orderedTips }) => {
-        const player = players.find(p => p.id === socket.id);
-        if (!player || roundData.playersWhoFinished[player.id]) return;
+    const player = players.find(p => p.id === socket.id);
+    if (!player || roundData.playersWhoFinished[player.id]) return;
 
-        // Gerencia as 3 tentativas individualmente
-        if (roundData.playerAttempts[player.id] === undefined) {
-            roundData.playerAttempts[player.id] = 3;
-        }
-        roundData.playerAttempts[player.id]--;
-        const attemptsLeft = roundData.playerAttempts[player.id];
+    if (roundData.playerAttempts[player.id] === undefined) {
+        roundData.playerAttempts[player.id] = 3;
+    }
+    roundData.playerAttempts[player.id]--;
+    const attemptsLeft = roundData.playerAttempts[player.id];
 
-        const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
-        const isCorrect = orderedTips.every((value, index) => value === correctOrder[index]);
+    const correctOrder = [...currentTips].sort((a, b) => a.number - b.number).map(t => t.tip);
+    const isCorrect = orderedTips.every((value, index) => value === correctOrder[index]);
 
-        let points = 0;
-        if (isCorrect) {
-            if (attemptsLeft === 2) points = 30;
-            else if (attemptsLeft === 1) points = 20;
-            else if (attemptsLeft === 0) points = 10;
-            player.score += points;
-            roundData.playersWhoFinished[player.id] = true;
-        }
+    let points = 0;
+    if (isCorrect) {
+        if (attemptsLeft === 2) points = 30;
+        else if (attemptsLeft === 1) points = 20;
+        else if (attemptsLeft === 0) points = 10;
+        player.score += points;
+    }
+    
+    // Decisão final: se o jogador acertou OU zerou as tentativas, o turno dele acabou.
+    if (isCorrect || attemptsLeft === 0) {
+        roundData.playersWhoFinished[player.id] = true;
+    }
+    
+    const rankedPlayers = [...players].sort((a, b) => b.score - a.score);
+    // Envia o resultado individual para o jogador saber o que aconteceu na sua tentativa.
+    socket.emit('orderResult', { isCorrect, points, attemptsLeft, players: rankedPlayers });
 
-        if (attemptsLeft === 0) {
-            roundData.playersWhoFinished[player.id] = true;
-        }
-        
-        const rankedPlayers = [...players].sort((a, b) => b.score - a.score);
-        socket.emit('orderResult', { isCorrect, points, attemptsLeft, players: rankedPlayers });
-
-        // Só encerra a rodada quando TODOS tiverem jogado
-        if (Object.keys(roundData.playersWhoFinished).length === players.length) {
-            const historyHtml = correctOrder.map(tip => `<li>${tip}</li>`).join('');
-            io.emit('roundOver', { historyHtml, players: rankedPlayers });
-        }
-    });
+    // A verificação mais importante: A rodada SÓ acaba se o número de jogadores que terminaram for igual ao total de jogadores.
+    if (Object.keys(roundData.playersWhoFinished).length === players.length) {
+        const historyHtml = correctOrder.map(tip => `<li>${tip}</li>`).join('');
+        io.emit('roundOver', { historyHtml, players: rankedPlayers });
+    }
+});
 
     socket.on('disconnect', () => {
         players = players.filter(p => p.id !== socket.id);
@@ -149,3 +149,4 @@ io.on('connection', (socket) => {
 server.listen(PORT, () => {
     console.log(`[SERVIDOR] Servidor rodando na porta ${PORT}`);
 });
+
