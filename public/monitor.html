@@ -7,76 +7,66 @@
 <link href="https://fonts.googleapis.com/css2?family=Lobster&display=swap" rel="stylesheet" />
 
 <style>
-    /* --- INÍCIO DOS ESTILOS CORRIGIDOS --- */
-
-    /* Estilos do Jogo Principal (Caminhão e Caixa Escura) */
+    /* Estilos do Jogo Principal */
     body {
         font-family: Arial, sans-serif;
         background: url('/imagens/fundo-caminhao.jpg') no-repeat center center fixed;
         background-size: cover;
-        color: #fff; /* Texto branco */
+        color: #fff;
         min-height: 100vh;
         padding: 20px;
         font-size: 1.1rem;
     }
 
-    /* O container principal (caixa escura) */
     #container {
-        background: rgba(0, 0, 0, 0.65); /* Caixa escura */
+        background: rgba(0, 0, 0, 0.65);
         padding: 30px;
         border-radius: 12px;
         max-width: 900px;
         margin: 0 auto;
         box-shadow: 0 0 15px #000;
-        
-        /* Layout flexível para os boxes */
         display: flex;
         gap: 20px;
         flex-wrap: wrap;
     }
 
-    /* As caixas de informação (agora escuras) */
     .box {
-        background: rgba(0, 0, 0, 0.3); /* Fundo escuro para os boxes */
+        background: rgba(0, 0, 0, 0.3);
         padding: 15px;
         border-radius: 8px;
         flex: 1;
         min-width: 280px;
-        border: 1px solid rgba(255, 165, 0, 0.5); /* Borda laranja */
+        border: 1px solid rgba(255, 165, 0, 0.5);
     }
     
-    /* Título Principal (Monitoramento...) */
     h1 { 
-        color: #ffa500; /* Laranja do logo */
+        color: #ffa500;
         text-align: center; 
         text-shadow: 1px 1px 4px #000;
-        font-family: 'Lobster', cursive; /* Fonte do logo */
-        font-size: 3.5rem; /* Tamanho do logo */
+        font-family: 'Lobster', cursive;
+        font-size: 3.5rem;
         margin-bottom: 20px;
     }
     
-    /* Títulos dos boxes (Status do Jogo, Rodada...) */
     h2 { 
         margin-top: 10px; 
-        border-bottom: 2px solid #ffa500; /* Laranja */
+        border-bottom: 2px solid #ffa500;
         padding-bottom: 5px; 
-        color: #ffffb3; /* Amarelo claro do subtítulo */
+        color: #ffffb3;
         text-shadow: 1px 1px 2px #000;
     }
 
     ul { list-style: none; padding-left: 0; }
     
-    /* Itens das listas (jogadores, dicas, etc.) */
     li { 
-        background: rgba(0, 0, 0, 0.5); /* Fundo escuro para itens da lista */
+        background: rgba(0, 0, 0, 0.5);
         margin: 5px 0; 
         padding: 8px 15px; 
         border-radius: 5px; 
         border: 1px solid rgba(255, 165, 0, 0.3);
     }
 
-    /* Estilos específicos do Monitor */
-    #status-jogo { font-size: 1.2em; font-weight: bold; color: #95ff00; } /* Verde-limão */
+    #status-jogo { font-size: 1.2em; font-weight: bold; color: #95ff00; }
     #cronometro { font-size: 1.5em; font-weight: bold; color: #d9534f; }
     
     #lista-log {
@@ -92,68 +82,51 @@
         border: none;
         font-size: 0.95em;
     }
-    /* --- FIM DOS ESTILOS CORRIGIDOS --- */
 
-
-    /* --- ESTILOS DO RESUMO DA RODADA (MONITOR) --- */
-
-    /* O overlay de fundo (tela cheia) */
+    /* ESTILOS DO RESUMO DA RODADA (MONITOR) */
     #monitor-resumo-overlay {
-        position: fixed; /* Fica por cima de tudo */
+        position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: rgba(0, 0, 0, 0.9); /* Fundo bem escuro */
+        background: rgba(0, 0, 0, 0.9);
         z-index: 1000;
-        
-        /* Começa escondido */
         display: none; 
-        
-        /* Centraliza o conteúdo */
         align-items: center;
         justify-content: center;
         padding: 20px;
     }
 
-    /* O container das duas colunas */
     #resumo-container {
         display: flex;
         gap: 20px;
         width: 100%;
-        max-width: 1200px; /* Limita a largura */
+        max-width: 1200px;
     }
 
-    /* Estilo de cada coluna (Gabarito e Placar) */
     .resumo-coluna {
-        flex: 1; /* Faz as colunas terem 50% de largura */
-        background: rgba(0, 0, 0, 0.5); /* Fundo (como os .box) */
+        flex: 1;
+        background: rgba(0, 0, 0, 0.5);
         padding: 20px;
         border-radius: 8px;
-        border: 1px solid rgba(255, 165, 0, 0.5); /* Borda laranja */
-        
-        /* Controle de altura caso a lista longa */
+        border: 1px solid rgba(255, 165, 0, 0.5);
         max-height: 80vh; 
         overflow-y: auto;
     }
 
-    /* O ESTILO CIANO "ILUMINADO" QUE VOCÊ PEDIU */
     .titulo-ciano {
-        font-family: Arial, sans-serif; /* Fonte limpa para o título */
+        font-family: Arial, sans-serif;
         font-size: 1.8rem;
-        color: #00FFFF; /* Ciano puro */
-        
-        /* Efeito "iluminado" (glow) */
+        color: #00FFFF;
         text-shadow: 0 0 4px #00FFFF, 
                      0 0 8px #00FFFF, 
                      0 0 12px rgba(0, 255, 255, 0.7);
-                     
         margin-bottom: 15px;
-        border-bottom: 2px solid #00FFFF; /* Linha ciano */
+        border-bottom: 2px solid #00FFFF;
         padding-bottom: 5px;
     }
 
-    /* Estilo das listas (similar ao que já existe) */
     .resumo-coluna ul {
         list-style: none;
         padding: 0;
@@ -166,21 +139,20 @@
         border-radius: 5px; 
         border: 1px solid rgba(255, 165, 0, 0.3);
         font-size: 1.1rem;
-        color: #fff; /* Texto branco normal para o placar */
+        color: #fff;
     }
 
-    /* Destaque especial para o gabarito */
     #resumo-lista-gabarito li {
-        color: #00FFFF; /* Texto ciano */
+        color: #00FFFF;
         font-weight: bold;
     }
 </style>
 </head>
 <body>
 
-  <h1>Monitoramento em Tempo Real - Jogo INDO</h1>
+  <h1>Monitoramento em Tempo Real - Level Up</h1>
 
-    <div id="container">
+  <div id="container">
 
     <div class="box" id="status-geral">
         <h2>Status do Jogo</h2>
@@ -197,71 +169,56 @@
 
     <div class="box" id="pontuacao">
       <h2>Pontuação</h2>
-      <ul id="placar">
-        </ul>
+      <ul id="placar"></ul>
     </div>
 
     <div class="box" id="status-jogadores">
       <h2>Jogadores Conectados</h2>
-      <ul id="lista-jogadores">
-        </ul>
+      <ul id="lista-jogadores"></ul>
     </div>
 
     <div class="box" id="dicas">
       <h2>Dicas da Rodada</h2>
-      <ul id="lista-dicas">
-        </ul>
+      <ul id="lista-dicas"></ul>
     </div>
 
     <div class="box" id="log-eventos">
       <h2>Log de Eventos</h2>
-      <ul id="lista-log">
-        </ul>
+      <ul id="lista-log"></ul>
     </div>
   </div>
 
   <div id="monitor-resumo-overlay">
     <div id="resumo-container">
-        
         <div class="resumo-coluna">
             <h2 class="titulo-ciano">Gabarito da Rodada</h2>
-            <ul id="resumo-lista-gabarito">
-                </ul>
+            <ul id="resumo-lista-gabarito"></ul>
         </div>
         
         <div class="resumo-coluna">
             <h2 class="titulo-ciano">Placar (ranking atual)</h2>
-            <ul id="resumo-lista-placar">
-                </ul>
+            <ul id="resumo-lista-placar"></ul>
         </div>
-
     </div>
-</div>
+  </div>
 
   <script>
-    // Conecta ao servidor (mesmo endereço do jogo)
     const socket = io();
 
-    // Seletores (buscando uma vez para melhor performance)
     const elListaJogadores = document.getElementById("lista-jogadores");
     const elNumeroRodada = document.getElementById("numero-rodada");
     const elTemaRodada = document.getElementById("tema-rodada");
     const elPlacar = document.getElementById("placar");
     const elListaDicas = document.getElementById("lista-dicas");
     
-    // Novos seletores
     const elStatusJogo = document.getElementById("status-jogo");
     const elJogadorDaVez = document.getElementById("jogador-da-vez");
     const elCronometro = document.getElementById("cronometro");
     const elListaLog = document.getElementById("lista-log");
 
-    // **** NOSSOS NOVOS SELETORES (DO RESUMO) ****
-    // AGORA ELES VÃO FUNCIONAR, POIS O HTML JÁ FOI LIDO
     const elResumoOverlay = document.getElementById("monitor-resumo-overlay");
     const elResumoGabarito = document.getElementById("resumo-lista-gabarito");
     const elResumoPlacar = document.getElementById("resumo-lista-placar");
-
-    // --- Listeners do Socket ---
 
     socket.on("atualiza-jogadores", (jogadores) => {
       elListaJogadores.innerHTML = "";
@@ -277,7 +234,6 @@
       elTemaRodada.textContent = rodada.tema;
       elListaDicas.innerHTML = ""; 
 
-      // **** NOSSA MUDANÇA (Esconder o resumo) ****
       if (elResumoOverlay) { 
           elResumoOverlay.style.display = "none";
       }
@@ -298,8 +254,6 @@
       elListaDicas.prepend(li);
     });
 
-    // --- Novos Listeners Essenciais ---
-
     socket.on("atualiza-status-jogo", (statusTexto) => {
         elStatusJogo.textContent = statusTexto;
     });
@@ -318,19 +272,15 @@
         elListaLog.prepend(li); 
     });
 
-    // **** NOSSO NOVO LISTENER (Mostrar e preencher o resumo) ****
-    // **** ATUALIZADO COM TRY...CATCH ****
     socket.on("exibir-resumo-rodada", (dados) => {
-        
         try {
-            // 1. Preencher Gabarito
             elResumoGabarito.innerHTML = "";
             dados.gabarito.forEach(item => {
                 const li = document.createElement("li");
-                if (item && item.numero && item.texto) { // <-- Verificação extra
-                      li.textContent = `(${item.numero}) ${item.texto}`;
+                if (item && item.numero && item.texto) {
+                    li.textContent = `(${item.numero}) ${item.texto}`;
                 } else if (item) {
-                      li.textContent = item.toString(); // Fallback
+                    li.textContent = item.toString();
                 }
                 elResumoGabarito.appendChild(li);
             });
@@ -340,14 +290,13 @@
         }
 
         try {
-            // 2. Preencher Placar
             elResumoPlacar.innerHTML = "";
             dados.placar.forEach(p => {
                 const li = document.createElement("li");
                 if (p && p.texto) {
                     li.textContent = p.texto;
                 } else if (p) {
-                    li.textContent = p.toString(); // Fallback
+                    li.textContent = p.toString();
                 }
                 elResumoPlacar.appendChild(li);
             });
@@ -356,15 +305,11 @@
             elResumoPlacar.innerHTML = "<li>Erro ao carregar placar.</li>";
         }
         
-        // 3. Exibir o Overlay (IMPORTANTE: usar 'flex')
-        // Esta linha agora é executada mesmo se o preenchimento falhar
-        if (elResumoOverlay) { // Verificação final
+        if (elResumoOverlay) {
             elResumoOverlay.style.display = "flex"; 
         }
     });
-
   </script>
 
 </body>
 </html>
-
